@@ -22,13 +22,17 @@ function renderPage(tab, pushshiftUrl){
 
 
 
-
+// Old: cannibalise this and use storage sync, then delete
 let changeColor = document.getElementById('changeColor');
 
 chrome.storage.sync.get('color', function(data) {
 	changeColor.style.backgroundColor = data.color;
 	changeColor.setAttribute('value', data.color);
 });
+// Old
+
+
+
 
 // My class for saving data
 function subredditVisit(subreddit, visitEpoch) {
@@ -37,52 +41,20 @@ function subredditVisit(subreddit, visitEpoch) {
 } 
 
 changeColor.onclick = function(element) {
-/*
-	let color = element.target.value;
-	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-	chrome.tabs.executeScript(
-	    tabs[0].id,
-	    {code: 'document.body.style.backgroundColor = "' + color + '";'});
-	});
-*/
-
-	var lastVisitEpoch = 1531526400; //   Friday, June 15, 2018 7:35:50 PM GMT
-	//var now = 1531526400; // ENSURE THAT NOW IS ACTUALLY LIKE... YESTERDAY OR WHENEVER PUSHSHIFT IS UPDATED
+	var lastVisitEpoch = 1531526400; //   Friday, June 15, 2018 7:35:50 PM GMT //PLACEHOLDER
 	var nowEpoch = Math.round(Date.now() / 1000.0); // Returns Epoch time in milliseconds, I convert to seconds
-
 
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
 		var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch);
 		renderPage(tab, pushshiftUrl);
 	});
-
-
-/*
-	var sub = getSubreddit();
-
-
-	var first = new subredditVisit("pics", 1242141242);
-	console.log("%o", first);
-
-
-	var regex = /reddit.com\/r\/(\w+)/gim;
-	var lastVisit = 1531526400; //   Friday, June 15, 2018 7:35:50 PM GMT
-	//var now = 1531526400; // ENSURE THAT NOW IS ACTUALLY LIKE... YESTERDAY OR WHENEVER PUSHSHIFT IS UPDATED
-	var now = Math.round(Date.now() / 1000.0); // Returns Epoch time in milliseconds, I convert to seconds
-
-	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
-		var subreddit = regex.exec(tab[0].url)[1]; // Matches string, then returns only the first capture group (\w+) 
-		var searchParams = "subreddit=" + subreddit + "&after=" + lastVisit + "&before=" + now + "&sort_type=num_comments&sort=desc&size=50";
-		chrome.tabs.update(tab.id, {url: "https://api.pushshift.io/reddit/submission/search/?" + searchParams});
-	});
-*/
 };
 
 
 
 
-/*
+/* Function: fetchJsonPictures && renderPage
 // ----------------------------------------
 // Test with jsfiddle.net
 
