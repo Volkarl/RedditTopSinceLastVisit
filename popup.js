@@ -32,7 +32,16 @@ chrome.storage.sync.get('color', function(data) {
 // Old
 
 
+var visitData[];
 
+document.body.onload = function() {
+	chrome.storage.sync.get("visitData", function(items) {
+		if (!chrome.runtime.error) {
+			console.log(items);
+			visitData = items.data;
+		}
+	});
+}
 
 // My class for saving data
 function subredditVisit(subreddit, visitEpoch) {
@@ -40,12 +49,30 @@ function subredditVisit(subreddit, visitEpoch) {
     this.visit = visitEpoch;
 } 
 
+function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
+	chrome.storage.sync.get(['visitData'], function(result) {
+		visitData = result;
+		if (result === undefined) { // If there was no data at all ???? WAIT HAVENT I HANDLED THIS ALREADY? JUST CHANGE THIS TO ONLY CHECK FOR undefined VisitData.find thingy?!
+			visitData.push(subreddit: nowEpoch);
+			return undefined;
+		}
+		else {
+			var lastVisitEpoch = result.FIND???
+			visitData[subreddit] = nowEpoch;
+			return lastVisitEpoch;
+		}
+		chrome.storage.sync.set({visitData: visitData}) // WHAT IF IT TIMES OUT? 
+		return lastVisitEpoch;
+	});
+}
+
 changeColor.onclick = function(element) {
-	var lastVisitEpoch = 1531526400; //   Friday, June 15, 2018 7:35:50 PM GMT //PLACEHOLDER
+	//var lastVisitEpoch = 1531526400; //   Friday, June 15, 2018 7:35:50 PM GMT //PLACEHOLDER
 	var nowEpoch = Math.round(Date.now() / 1000.0); // Returns Epoch time in milliseconds, I convert to seconds
 
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
+		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, nowEpoch);
 		var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch);
 		renderPage(tab, pushshiftUrl);
 	});
