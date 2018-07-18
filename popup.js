@@ -22,7 +22,7 @@ function getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch){
 
 function renderPage(tab, pushshiftUrl){
 	console.log("Redirecting current tab to " + pushshiftUrl);
-	chrome.tabs.update(tab.id, {url: pushshiftUrl});
+	chrome.tabs.create({url: pushshiftUrl, active: false});
 }
 
 function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
