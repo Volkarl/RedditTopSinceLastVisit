@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// This software was made using the chrome extension "getting started" guide, using its software as a working foundation, then changing it to accommodate the intended functionality. 
+
 'use strict';
+
+var visitData;
 
 function getSubreddit(tab){
 	var regex = /reddit.com\/r\/(\w+)/gim;
@@ -21,22 +25,16 @@ function renderPage(tab, pushshiftUrl){
 	//chrome.tabs.update(tab.id, {url: pushshiftUrl});
 }
 
+function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
+	console.log(visitData);
 
-
-
-// Old: cannibalise this and use storage sync, then delete
-let changeColor = document.getElementById('changeColor');
-
-chrome.storage.sync.get('color', function(data) {
-	changeColor.style.backgroundColor = data.color;
-	changeColor.setAttribute('value', data.color);
-});
-
-// chrome.storage.sync.clear();
-// Old
-
-
-var visitData;
+	var lastVisitEpoch = visitData[subreddit];
+	// If there was no prior visit, undefined is returned
+	visitData[subreddit] = nowEpoch;
+	console.log("Syncing data");
+	chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
+	return lastVisitEpoch;
+}
 
 document.body.onload = function() {
 	console.log("Loading data");
@@ -49,32 +47,13 @@ document.body.onload = function() {
 			visitData = {};
 		}
 		else {
-			console.log(result); // Also color which I dont want
+			console.log(result);
 			visitData = result;
 		}
 	});
 }
 
-/*
-// My class for saving data
-function subredditVisit(subreddit, visitEpoch) {
-    this.subreddit = subreddit;
-    this.visit = visitEpoch;
-} 
-*/
-
-function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
-	console.log(visitData);
-
-	var lastVisitEpoch = visitData[subreddit];
-	// If there was no prior visit, undefined is returned
-	visitData[subreddit] = nowEpoch;
-	console.log("Syncing data");
-	chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
-	return lastVisitEpoch;
-}
-
-changeColor.onclick = function(element) {
+mainWindow.onclick = function(element) {
 	console.log("Clicked!");
 	var nowEpoch = Math.round(Date.now() / 1000.0); 
 	// Date.now returns Epoch time in milliseconds, I convert to seconds
@@ -95,7 +74,7 @@ changeColor.onclick = function(element) {
 
 
 /* Function: fetchJsonPictures && renderPage
-// ----------------------------------------
+// ----------------------------------------------------------------------------------
 // Test with jsfiddle.net
 
 // HTML
@@ -126,13 +105,14 @@ const render = post => {
   return post
 }
 
-// ----------------------------------------
+// ----------------------------------------------------------------------------------
 */
 
 
 
 
-
+//////////////////////////////////// Search URL selection
+// ----------------------------------------------------------------------------------
 
 /* NOTE: I'm sorting by number of comments because score of the post doesn't work, and those two are often similar. 
 It seems as if pusshift (elasticsearch?) and reddit scores mean differing things?? As soon as I put before and after parameters there, score sorting stops working.  
@@ -160,5 +140,5 @@ Or I go through all of my results, get the real score from the reddit api and th
 
 // https://api.pushshift.io/reddit/submission/search/?
 // var searchParams = "after=" + lastVisit + "&before=" + now + "&sort_type=score&sort=desc";
-
+// ----------------------------------------------------------------------------------
 
