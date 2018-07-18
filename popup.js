@@ -36,6 +36,16 @@ function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
 	return lastVisitEpoch;
 }
 
+function addElement(parentId, elementTag, elementId, html) {
+	// From: https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
+    // Adds an element to the document
+    var p = document.getElementById(parentId);
+    var newElement = document.createElement(elementTag);
+    newElement.setAttribute('id', elementId);
+    newElement.innerHTML = html;
+    p.appendChild(newElement);
+}
+
 document.body.onload = function() {
 	console.log("Loading data");
 	chrome.storage.sync.get(null, function(result) {
@@ -50,6 +60,14 @@ document.body.onload = function() {
 			console.log(result);
 			visitData = result;
 		}
+
+
+		// Make percentage instead of pixels
+		// var buttonHtml = '<button height=100px width=100px/> ' +
+        //     '<a href="" onclick="javascript:loadSubreddit(subreddit, visitData[subreddit]);">'                /// THIS IS SYNTAX INCORRECT IM SURE
+		// Foreach subreddit in visitData
+		// Somehow ensure that each has text on it with Subreddit and days since last visit (so it needs to call a function somehow)
+		// addElement('subredditButtons', 'p', 'subredditButton-' + i, buttonHtml)
 	});
 }
 
