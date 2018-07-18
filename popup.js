@@ -7,6 +7,7 @@
 function getSubreddit(tab){
 	var regex = /reddit.com\/r\/(\w+)/gim;
 	var subreddit = regex.exec(tab[0].url)[1]; // Matches string, then returns only the first capture group (\w+) 
+	console.log("Matched subreddit " + subreddit);
 	return subreddit;
 }
 
@@ -16,7 +17,8 @@ function getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch){
 }
 
 function renderPage(tab, pushshiftUrl){
-	chrome.tabs.update(tab.id, {url: pushshiftUrl});
+	console.log("Redirecting current tab to " + pushshiftUrl);
+	//chrome.tabs.update(tab.id, {url: pushshiftUrl});
 }
 
 
@@ -29,50 +31,61 @@ chrome.storage.sync.get('color', function(data) {
 	changeColor.style.backgroundColor = data.color;
 	changeColor.setAttribute('value', data.color);
 });
+
+// chrome.storage.sync.clear();
 // Old
 
 
-var visitData[];
+var visitData;
 
 document.body.onload = function() {
-	chrome.storage.sync.get("visitData", function(items) {
-		if (!chrome.runtime.error) {
-			console.log(items);
-			visitData = items.data;
+	console.log("Loading data");
+	chrome.storage.sync.get(null, function(result) {
+		if (chrome.runtime.error) {
+			console.log("Error loading data"); ////////////////////////// Give error message? Allow option for retrying?
+		}
+		else if (result === undefined) {
+			console.log("Undefined");
+			visitData = {};
+		}
+		else {
+			console.log(result); // Also color which I dont want
+			visitData = result;
 		}
 	});
 }
 
+/*
 // My class for saving data
 function subredditVisit(subreddit, visitEpoch) {
     this.subreddit = subreddit;
     this.visit = visitEpoch;
 } 
+*/
 
 function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
-	chrome.storage.sync.get(['visitData'], function(result) {
-		visitData = result;
-		if (result === undefined) { // If there was no data at all ???? WAIT HAVENT I HANDLED THIS ALREADY? JUST CHANGE THIS TO ONLY CHECK FOR undefined VisitData.find thingy?!
-			visitData.push(subreddit: nowEpoch);
-			return undefined;
-		}
-		else {
-			var lastVisitEpoch = result.FIND???
-			visitData[subreddit] = nowEpoch;
-			return lastVisitEpoch;
-		}
-		chrome.storage.sync.set({visitData: visitData}) // WHAT IF IT TIMES OUT? 
-		return lastVisitEpoch;
-	});
+	console.log(visitData);
+
+	var lastVisitEpoch = visitData[subreddit];
+	// If there was no prior visit, undefined is returned
+	visitData[subreddit] = nowEpoch;
+	console.log("Syncing data");
+	chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
+	return lastVisitEpoch;
 }
 
 changeColor.onclick = function(element) {
-	//var lastVisitEpoch = 1531526400; //   Friday, June 15, 2018 7:35:50 PM GMT //PLACEHOLDER
-	var nowEpoch = Math.round(Date.now() / 1000.0); // Returns Epoch time in milliseconds, I convert to seconds
+	console.log("Clicked!");
+	var nowEpoch = Math.round(Date.now() / 1000.0); 
+	// Date.now returns Epoch time in milliseconds, I convert to seconds
 
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
 		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, nowEpoch);
+		if(lastVisitEpoch === undefined) {
+			console.log("No prior visit to subreddit " + subreddit);
+			return;
+		}
 		var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch);
 		renderPage(tab, pushshiftUrl);
 	});
