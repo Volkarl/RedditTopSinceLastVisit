@@ -7,6 +7,7 @@
 'use strict';
 
 var visitData;
+var nowEpoch;
 
 function getSubreddit(tab){
 	var regex = /reddit.com\/r\/(\w+)/gim;
@@ -15,17 +16,17 @@ function getSubreddit(tab){
 	return subreddit;
 }
 
-function getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch){
+function getPushshiftUrl(subreddit, lastVisitEpoch){
 	var searchParams = "subreddit=" + subreddit + "&after=" + lastVisitEpoch + "&before=" + nowEpoch + "&sort_type=num_comments&sort=desc&size=50";
 	return "https://api.pushshift.io/reddit/submission/search/?" + searchParams;
 }
 
-function renderPage(tab, pushshiftUrl){
-	console.log("Redirecting current tab to " + pushshiftUrl);
+function renderPage(pushshiftUrl){
+	console.log("Creating tab " + pushshiftUrl);
 	chrome.tabs.create({url: pushshiftUrl, active: false});
 }
 
-function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
+function getLastVisitEpochAndReplace(subreddit) {
 	console.log(visitData);
 
 	var lastVisitEpoch = visitData[subreddit];
@@ -36,17 +37,68 @@ function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
 	return lastVisitEpoch;
 }
 
-function addElement(parentId, elementTag, elementId, html) {
-	// From: https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
-    // Adds an element to the document
-    var p = document.getElementById(parentId);
-    var newElement = document.createElement(elementTag);
-    newElement.setAttribute('id', elementId);
-    newElement.innerHTML = html;
-    p.appendChild(newElement);
+function addButton(id, text, onclick) {
+	// Adapted from: https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
+    var p = document.getElementById('subredditButtonFrame');
+    var newElement = document.createElement('button');
+    newElement.setAttribute('id', id);
+    newElement.setAttribute('onclick', onclick);
+    newElement.addEventListener('click', onclick);
+    newElement.textContent = text;
+
+    console.log("Adding button");
+    console.log(newElement);
+
+    p.appendChild(newElement);    
+}
+
+function convertEpochToDays(epoch) {
+	return Math.round((nowEpoch - epoch) / 86400);
+	// Amount of (24 hours) that can fit in the time difference
+}
+
+function getCurrentEpoch(){
+	return Math.round(Date.now() / 1000.0); 
+	// Date.now returns Epoch time in milliseconds, I convert to seconds
+}
+
+function populatePopup() {
+	for (var subreddit in visitData) {
+		// Make percentage instead of pixels TODO ////////////////////////
+		var days = convertEpochToDays(visitData[subreddit]);
+		var text = subreddit + ": " + days + (days == 1 ? " day" : " days"); 
+		// var buttonHtml = '<div "class="button" onclick="javascript:loadSubreddit(' + subreddit + ');>' + text + '</div> ';
+		// var buttonHtml = '<button onclick="javascript:loadSubreddit(' + subreddit + ');>' + text + '</button> ';
+		// style="width:60px;height:100px;" 
+		// id="sBtn-' + subreddit + '" 
+		addButton('sBtn-' + subreddit, text, function() {loadSubreddit(subreddit)});
+		// "loadSubreddit(" + subreddit + ")"
+		//javascript:loadSubreddit
+	}
+        //     '<a href="" onclick="javascript:loadSubreddit(subreddit, visitData[subreddit]);">'
+}
+
+function loadSubreddit(subreddit) {
+	console.log("Clicked " + subreddit);
+	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);
+	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
+	renderPage(pushshiftUrl);
+}
+
+function addSubreddit() {
+	console.log("Add current tab to visitData");
+	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
+		var subreddit = getSubreddit(tab);
+		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);
+		if(lastVisitEpoch === undefined) {
+			console.log("No prior visit to subreddit " + subreddit);
+		}
+	});
 }
 
 document.body.onload = function() {
+	nowEpoch = getCurrentEpoch(); 
+
 	console.log("Loading data");
 	chrome.storage.sync.get(null, function(result) {
 		if (chrome.runtime.error) {
@@ -61,21 +113,14 @@ document.body.onload = function() {
 			visitData = result;
 		}
 
-
-		// Make percentage instead of pixels
-		// var buttonHtml = '<button height=100px width=100px/> ' +
-        //     '<a href="" onclick="javascript:loadSubreddit(subreddit, visitData[subreddit]);">'                /// THIS IS SYNTAX INCORRECT IM SURE
-		// Foreach subreddit in visitData
-		// Somehow ensure that each has text on it with Subreddit and days since last visit (so it needs to call a function somehow)
-		// addElement('subredditButtons', 'p', 'subredditButton-' + i, buttonHtml)
+		populatePopup();
 	});
 }
 
+/*
+
 mainWindow.onclick = function(element) {
 	console.log("Clicked!");
-	var nowEpoch = Math.round(Date.now() / 1000.0); 
-	// Date.now returns Epoch time in milliseconds, I convert to seconds
-
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
 		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, nowEpoch);
@@ -88,7 +133,7 @@ mainWindow.onclick = function(element) {
 	});
 };
 
-
+*/
 
 
 /* Function: fetchJsonPictures && renderPage
