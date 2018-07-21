@@ -29,24 +29,31 @@ function renderPage(pushshiftUrl){
 function getLastVisitEpochAndReplace(subreddit) {
 	console.log(visitData);
 
+	console.log("Called lastVisitEpoch with subreddit " + subreddit);
+
 	var lastVisitEpoch = visitData[subreddit];
 	// If there was no prior visit, undefined is returned
-	visitData[subreddit] = nowEpoch;
-	console.log("Syncing data");
-	chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
+
+	if(lastVisitEpoch !== undefined) {	
+		visitData[subreddit] = nowEpoch;
+		console.log("Syncing data");
+		chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
+	}
 	return lastVisitEpoch;
 }
 
-function addButton(id, text, onclick) {
+function addButton(id, value, text, onclick) {
 	// Adapted from: https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
+		// style="width:60px;height:100px;" 
     var p = document.getElementById('subredditButtonFrame');
     var newElement = document.createElement('button');
     newElement.setAttribute('id', id);
-    newElement.setAttribute('onclick', onclick);
+    newElement.setAttribute('value', value);
     newElement.addEventListener('click', onclick);
+
     newElement.textContent = text;
 
-    console.log("Adding button");
+    console.log("Adding button " + id);
     console.log(newElement);
 
     p.appendChild(newElement);    
@@ -62,18 +69,20 @@ function getCurrentEpoch(){
 	// Date.now returns Epoch time in milliseconds, I convert to seconds
 }
 
+function generateButtonText(subreddit) {
+	var days = convertEpochToDays(visitData[subreddit]);
+	return subreddit + ": " + days + (days == 1 ? " day" : " days");
+}
+
 function populatePopup() {
 	for (var subreddit in visitData) {
 		// Make percentage instead of pixels TODO ////////////////////////
-		var days = convertEpochToDays(visitData[subreddit]);
-		var text = subreddit + ": " + days + (days == 1 ? " day" : " days"); 
-		// var buttonHtml = '<div "class="button" onclick="javascript:loadSubreddit(' + subreddit + ');>' + text + '</div> ';
-		// var buttonHtml = '<button onclick="javascript:loadSubreddit(' + subreddit + ');>' + text + '</button> ';
-		// style="width:60px;height:100px;" 
-		// id="sBtn-' + subreddit + '" 
-		addButton('sBtn-' + subreddit, text, function() {loadSubreddit(subreddit)});
-		// "loadSubreddit(" + subreddit + ")"
-		//javascript:loadSubreddit
+		addButton('sBtn-' + subreddit, subreddit, generateButtonText(subreddit), function() {
+			console.log("OLD: " + visitData[this.value]);
+			loadSubreddit(this.value);
+			console.log("NEW: " + visitData[this.value]);
+			this.textContent = generateButtonText(this.value); ////////////////////////// PROBLEM: This may execute prior to storage.sync completing, so it may not update. Find better solution.
+		});
 	}
         //     '<a href="" onclick="javascript:loadSubreddit(subreddit, visitData[subreddit]);">'
 }
@@ -85,16 +94,20 @@ function loadSubreddit(subreddit) {
 	renderPage(pushshiftUrl);
 }
 
-function addSubreddit() {
+function addNewSubreddit() {
 	console.log("Add current tab to visitData");
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
-		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);
+		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);                ///////////////////////CURRENTLY ALSO OVERRIDES PREVIOUSLY ADDED SUBREDDITS
 		if(lastVisitEpoch === undefined) {
 			console.log("No prior visit to subreddit " + subreddit);
 		}
 	});
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById("btnAddNewSub").addEventListener("click", addNewSubreddit);
+});
 
 document.body.onload = function() {
 	nowEpoch = getCurrentEpoch(); 
