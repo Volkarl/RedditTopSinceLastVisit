@@ -59,7 +59,8 @@ function addButton(id, value, text, onclick) {
     console.log("Adding button " + id);
     console.log(newElement);
 
-    p.appendChild(newElement);    
+    p.appendChild(newElement);
+    p.appendChild(document.createElement('br')); // Line break
 }
 
 function convertEpochToDays(epoch) {
