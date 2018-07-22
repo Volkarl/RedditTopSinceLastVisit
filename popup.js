@@ -7,6 +7,7 @@
 'use strict';
 
 var visitData;
+var nowEpoch;
 
 function getSubreddit(tab){
 	var regex = /reddit.com\/r\/(\w+)/gim;
@@ -15,28 +16,142 @@ function getSubreddit(tab){
 	return subreddit;
 }
 
-function getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch){
+function getPushshiftUrl(subreddit, lastVisitEpoch){
 	var searchParams = "subreddit=" + subreddit + "&after=" + lastVisitEpoch + "&before=" + nowEpoch + "&sort_type=num_comments&sort=desc&size=50";
 	return "https://api.pushshift.io/reddit/submission/search/?" + searchParams;
 }
 
-function renderPage(tab, pushshiftUrl){
-	console.log("Redirecting current tab to " + pushshiftUrl);
-	chrome.tabs.update(tab.id, {url: pushshiftUrl});
+function renderPage(pushshiftUrl){
+	console.log("Creating tab " + pushshiftUrl);
+	chrome.tabs.create({url: pushshiftUrl, active: false});
 }
 
-function getLastVisitEpochAndReplace(subreddit, nowEpoch) {
+function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
+	if(reloadAfterSync) {
+		chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
+			console.log("Saved visit: " + subreddit + " at " + visitEpoch)
+			reloadPage();
+		});
+	}
+	else {
+		chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
+			console.log("Saved visit: " + subreddit + " at " + visitEpoch)
+		});		
+	}
+}
+
+function getLastVisitEpochAndReplace(subreddit, reloadAfterSync) {
 	console.log(visitData);
 
+	console.log("Called lastVisitEpoch with subreddit " + subreddit);
+
 	var lastVisitEpoch = visitData[subreddit];
-	// If there was no prior visit, undefined is returned
-	visitData[subreddit] = nowEpoch;
-	console.log("Syncing data");
-	chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
+	if(lastVisitEpoch !== undefined) {	
+		visitData[subreddit] = nowEpoch;
+		console.log("Syncing data");
+		syncToChrome(subreddit, nowEpoch, reloadAfterSync);
+
+		/*chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {
+			console.log("Saved visit: " + subreddit + " at " + nowEpoch)
+			reloadPage();
+		}); // WHAT IF IT TIMES OUT? 
+/*		if (btnId !== undefined) {
+		    var btn = document.getElementById(btnId);
+		    btn.textContent = generateButtonText(subreddit);
+		    console.log("Updated text")
+		}*/
+	}
 	return lastVisitEpoch;
 }
 
+function addButton(id, value, text, onclick) {
+	// Adapted from: https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
+    var p = document.getElementById('subredditButtonFrame');
+    var newElement = document.createElement('button');
+    newElement.setAttribute('id', id);
+    newElement.setAttribute('value', value);
+    newElement.addEventListener('click', onclick);
+
+	newElement.textContent = generateButtonText(value); ////////////////////////// PROBLEM: This may execute prior to storage.sync completing, so it may not update. Find better solution.
+
+    console.log("Adding button " + id);
+    console.log(newElement);
+
+    p.appendChild(newElement);
+    p.appendChild(document.createElement('br')); // Line break
+    // Maybe I can find a way to do this inline in the html file's styles?
+}
+
+function convertEpochToDays(epoch) {
+	return Math.round((nowEpoch - epoch) / 86400);
+	// Amount of (24 hours) that can fit in the time difference
+}
+
+function getCurrentEpoch(){
+	return Math.round(Date.now() / 1000.0); 
+	// Date.now returns Epoch time in milliseconds, I convert to seconds
+}
+
+function generateButtonText(subreddit) {
+	var days = convertEpochToDays(visitData[subreddit]);
+	return subreddit + ": " + days + (days == 1 ? " day" : " days");
+}
+
+function populatePopup() {
+	for (var subreddit in visitData) {
+		// Make percentage instead of pixels TODO ////////////////////////
+		addButton('sBtn-' + subreddit, subreddit, generateButtonText(subreddit), function() {
+			loadSubreddit(this.value);
+		});
+	}
+}
+
+function loadSubreddit(subreddit) {
+	console.log("Clicked " + subreddit);
+	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, true);
+	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
+	renderPage(pushshiftUrl);
+}
+
+function addNewSubreddit() {
+	console.log("Add current tab to visitData");
+	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
+		var subreddit = getSubreddit(tab);
+		var lastVisit = visitData[subreddit];
+		if(lastVisit !== undefined)
+			console.log("No prior visits");
+			visitData[subreddit] = nowEpoch;
+			syncToChrome(subreddit, nowEpoch, true);
+	});
+}
+
+function removeSubreddit() {
+	console.log("Clicked remove subreddit");
+	var subreddit = prompt("Remove subreddit:");
+	if(subreddit !== null) {
+		console.log("Removing subreddit " + subreddit);
+		delete visitData[subreddit];
+		chrome.storage.sync.remove(subreddit, function() {
+			console.log("Successfully removed subreddit");
+			reloadPage();
+		});
+	}
+	console.log("Removing subreddit: " + subreddit);
+}
+
+function reloadPage() {
+	location.reload();
+}
+
+// Add event handlers
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById("btnAddNewSub").addEventListener("click", addNewSubreddit);
+  document.getElementById("btnRemoveSub").addEventListener("click", removeSubreddit);
+});
+
 document.body.onload = function() {
+	nowEpoch = getCurrentEpoch(); 
+
 	console.log("Loading data");
 	chrome.storage.sync.get(null, function(result) {
 		if (chrome.runtime.error) {
@@ -50,14 +165,15 @@ document.body.onload = function() {
 			console.log(result);
 			visitData = result;
 		}
+
+		populatePopup();
 	});
 }
 
+/*
+
 mainWindow.onclick = function(element) {
 	console.log("Clicked!");
-	var nowEpoch = Math.round(Date.now() / 1000.0); 
-	// Date.now returns Epoch time in milliseconds, I convert to seconds
-
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
 		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, nowEpoch);
@@ -70,7 +186,7 @@ mainWindow.onclick = function(element) {
 	});
 };
 
-
+*/
 
 
 /* Function: fetchJsonPictures && renderPage
