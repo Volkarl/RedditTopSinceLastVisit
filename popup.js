@@ -26,18 +26,21 @@ function renderPage(pushshiftUrl){
 	chrome.tabs.create({url: pushshiftUrl, active: false});
 }
 
-function getLastVisitEpochAndReplace(subreddit) {
+function getLastVisitEpochAndReplace(subreddit, btnId) {
 	console.log(visitData);
 
 	console.log("Called lastVisitEpoch with subreddit " + subreddit);
 
 	var lastVisitEpoch = visitData[subreddit];
-	// If there was no prior visit, undefined is returned
-
 	if(lastVisitEpoch !== undefined) {	
 		visitData[subreddit] = nowEpoch;
 		console.log("Syncing data");
 		chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
+		if (btnId !== undefined) {
+		    var btn = document.getElementById(btnId);
+		    btn.textContent = generateButtonText(subreddit);
+		    console.log("Updated text")
+		}
 	}
 	return lastVisitEpoch;
 }
@@ -51,7 +54,7 @@ function addButton(id, value, text, onclick) {
     newElement.setAttribute('value', value);
     newElement.addEventListener('click', onclick);
 
-    newElement.textContent = text;
+	newElement.textContent = generateButtonText(value); ////////////////////////// PROBLEM: This may execute prior to storage.sync completing, so it may not update. Find better solution.
 
     console.log("Adding button " + id);
     console.log(newElement);
@@ -78,18 +81,14 @@ function populatePopup() {
 	for (var subreddit in visitData) {
 		// Make percentage instead of pixels TODO ////////////////////////
 		addButton('sBtn-' + subreddit, subreddit, generateButtonText(subreddit), function() {
-			console.log("OLD: " + visitData[this.value]);
-			loadSubreddit(this.value);
-			console.log("NEW: " + visitData[this.value]);
-			this.textContent = generateButtonText(this.value); ////////////////////////// PROBLEM: This may execute prior to storage.sync completing, so it may not update. Find better solution.
+			loadSubreddit(this.value, this.id);
 		});
 	}
-        //     '<a href="" onclick="javascript:loadSubreddit(subreddit, visitData[subreddit]);">'
 }
 
-function loadSubreddit(subreddit) {
+function loadSubreddit(subreddit, btnId) {
 	console.log("Clicked " + subreddit);
-	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);
+	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, btnId);
 	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
 	renderPage(pushshiftUrl);
 }
