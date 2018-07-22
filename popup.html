@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html style="background-color: orange;">
   <head>
     <style>
       button {
@@ -9,13 +9,14 @@
       }
     </style>
   </head>
-  <body>
+  <body style="background-color: white;">
     <script src="popup.js"></script>
-    <div id="subredditButtonFrame" style="border: 1px solid black; height: 200px; width: 200px; overflow: auto;">
-      <div style="height: 30%;">
+    <div style="height: 200px; width: 200px;">
+      <div style="border: 1px solid black; height: 20%; box-sizing: border-box; margin-bottom: 5%;">
         <button id="btnAddNewSub" style="height: 100%; width: 50%; float: left; background-color: lightblue;">Add Current Subreddit</button>
         <button id="btnRemoveSub" style="height: 100%; width: 50%; float: left; background-color: lightblue;">Remove Subreddit</button>
       </div>
+      <div id="subredditButtonFrame" style="border: 1px solid black; height: 75%; overflow: auto; box-sizing: border-box;"></div>
     </div>
   </body>
 </html>
