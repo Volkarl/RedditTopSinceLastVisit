@@ -1,6 +1,6 @@
 {
   "name": "SubredditTopperGetter",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Gets the top posts of a subreddit since your last visit.",
   "permissions": ["activeTab", "declarativeContent", "storage"],
   "options_page": "options.html",
