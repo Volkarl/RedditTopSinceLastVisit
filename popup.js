@@ -26,7 +26,21 @@ function renderPage(pushshiftUrl){
 	chrome.tabs.create({url: pushshiftUrl, active: false});
 }
 
-function getLastVisitEpochAndReplace(subreddit, btnId) {
+function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
+	if(reloadAfterSync) {
+		chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
+			console.log("Saved visit: " + subreddit + " at " + visitEpoch)
+			reloadPage();
+		});
+	}
+	else {
+		chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
+			console.log("Saved visit: " + subreddit + " at " + visitEpoch)
+		});		
+	}
+}
+
+function getLastVisitEpochAndReplace(subreddit, reloadAfterSync) {
 	console.log(visitData);
 
 	console.log("Called lastVisitEpoch with subreddit " + subreddit);
@@ -35,19 +49,23 @@ function getLastVisitEpochAndReplace(subreddit, btnId) {
 	if(lastVisitEpoch !== undefined) {	
 		visitData[subreddit] = nowEpoch;
 		console.log("Syncing data");
-		chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {console.log("Saved visit: " + subreddit + " at " + nowEpoch)}); // WHAT IF IT TIMES OUT? 
-		if (btnId !== undefined) {
+		syncToChrome(subreddit, nowEpoch, reloadAfterSync);
+
+		/*chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {
+			console.log("Saved visit: " + subreddit + " at " + nowEpoch)
+			reloadPage();
+		}); // WHAT IF IT TIMES OUT? 
+/*		if (btnId !== undefined) {
 		    var btn = document.getElementById(btnId);
 		    btn.textContent = generateButtonText(subreddit);
 		    console.log("Updated text")
-		}
+		}*/
 	}
 	return lastVisitEpoch;
 }
 
 function addButton(id, value, text, onclick) {
 	// Adapted from: https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
-		// style="width:60px;height:100px;" 
     var p = document.getElementById('subredditButtonFrame');
     var newElement = document.createElement('button');
     newElement.setAttribute('id', id);
@@ -61,6 +79,7 @@ function addButton(id, value, text, onclick) {
 
     p.appendChild(newElement);
     p.appendChild(document.createElement('br')); // Line break
+    // Maybe I can find a way to do this inline in the html file's styles?
 }
 
 function convertEpochToDays(epoch) {
@@ -82,14 +101,14 @@ function populatePopup() {
 	for (var subreddit in visitData) {
 		// Make percentage instead of pixels TODO ////////////////////////
 		addButton('sBtn-' + subreddit, subreddit, generateButtonText(subreddit), function() {
-			loadSubreddit(this.value, this.id);
+			loadSubreddit(this.value);
 		});
 	}
 }
 
-function loadSubreddit(subreddit, btnId) {
+function loadSubreddit(subreddit) {
 	console.log("Clicked " + subreddit);
-	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, btnId);
+	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, true);
 	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
 	renderPage(pushshiftUrl);
 }
@@ -98,15 +117,36 @@ function addNewSubreddit() {
 	console.log("Add current tab to visitData");
 	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
 		var subreddit = getSubreddit(tab);
-		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);                ///////////////////////CURRENTLY ALSO OVERRIDES PREVIOUSLY ADDED SUBREDDITS
-		if(lastVisitEpoch === undefined) {
-			console.log("No prior visit to subreddit " + subreddit);
-		}
+		var lastVisit = visitData[subreddit];
+		if(lastVisit !== undefined)
+			console.log("No prior visits");
+			visitData[subreddit] = nowEpoch;
+			syncToChrome(subreddit, nowEpoch, true);
 	});
 }
 
+function removeSubreddit() {
+	console.log("Clicked remove subreddit");
+	var subreddit = prompt("Remove subreddit:");
+	if(subreddit !== null) {
+		console.log("Removing subreddit " + subreddit);
+		delete visitData[subreddit];
+		chrome.storage.sync.remove(subreddit, function() {
+			console.log("Successfully removed subreddit");
+			reloadPage();
+		});
+	}
+	console.log("Removing subreddit: " + subreddit);
+}
+
+function reloadPage() {
+	location.reload();
+}
+
+// Add event handlers
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("btnAddNewSub").addEventListener("click", addNewSubreddit);
+  document.getElementById("btnRemoveSub").addEventListener("click", removeSubreddit);
 });
 
 document.body.onload = function() {
