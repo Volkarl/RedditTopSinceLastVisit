@@ -23,7 +23,8 @@ function getPushshiftUrl(subreddit, lastVisitEpoch){
 
 function renderPage(pushshiftUrl){
 	console.log("Creating tab " + pushshiftUrl);
-	chrome.tabs.create({url: pushshiftUrl, active: false});
+	createHtmlChildren(pushshiftUrl); // Analyse json and create HTML string with all images, pictures, videos, etc.
+	openHtmlAsNewTab(); 
 }
 
 function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
@@ -50,16 +51,6 @@ function getLastVisitEpochAndReplace(subreddit, reloadAfterSync) {
 		visitData[subreddit] = nowEpoch;
 		console.log("Syncing data");
 		syncToChrome(subreddit, nowEpoch, reloadAfterSync);
-
-		/*chrome.storage.sync.set({ [subreddit]: nowEpoch}, function() {
-			console.log("Saved visit: " + subreddit + " at " + nowEpoch)
-			reloadPage();
-		}); // WHAT IF IT TIMES OUT? 
-/*		if (btnId !== undefined) {
-		    var btn = document.getElementById(btnId);
-		    btn.textContent = generateButtonText(subreddit);
-		    console.log("Updated text")
-		}*/
 	}
 	return lastVisitEpoch;
 }
@@ -140,7 +131,7 @@ function removeSubreddit() {
 }
 
 function reloadPage() {
-	location.reload();
+	//location.reload();
 }
 
 // Add event handlers
@@ -170,61 +161,38 @@ document.body.onload = function() {
 	});
 }
 
-/*
+var htmlChildren;
 
-mainWindow.onclick = function(element) {
-	console.log("Clicked!");
-	chrome.tabs.query({currentWindow: true, active: true}, function (tab) {
-		var subreddit = getSubreddit(tab);
-		var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, nowEpoch);
-		if(lastVisitEpoch === undefined) {
-			console.log("No prior visit to subreddit " + subreddit);
-			return;
-		}
-		var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch, nowEpoch);
-		renderPage(tab, pushshiftUrl);
-	});
-};
+function createHtmlChildren(pushshiftUrl) {
+	const addToString = post => {
+		var html = `
+			<div>
+				<a href="${post.img}">
+					<img src="${post.img}"/>
+				</a>
+			</div>`;
 
-*/
+		htmlChildren === undefined ? htmlChildren = html : htmlChildren += html;
+	  	return post
+	  }
 
-
-/* Function: fetchJsonPictures && renderPage
-// ----------------------------------------------------------------------------------
-// Test with jsfiddle.net
-
-// HTML
-// <div id="app"></div>
-
-// Displays all images from the json file it fetches below each other
-// I can use this to display pictures in their original quality below each other, with links to the reddit thread in between (havent added this yet)
-// What I still lack is the ability to display gifs (it kind of works, but breaks easily), gfycat and videos (? do I want this?)
-
-
-fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1531526400&before=1531725505&sort_type=num_comments&sort=desc&size=50')
-  .then(res => res.json())
-  .then(res => res.data)
-  .then(res => res.map(post => ({
-    img: post.url})))
-	.then(res => res.map(render))
-	.then(res => console.log(res))
-
-const app = document.querySelector('#app');
-
-const render = post => {
-	const node = document.createElement('div');
-	node.innerHTML = `
-      <a href="${post.img}">
-        <img src="${post.img}"/>
-      </a>`;
-	app.appendChild(node);
-  return post
+	fetch(pushshiftUrl)
+	  .then(res => res.json())
+	  .then(res => res.data)
+	  .then(res => res.map(post => ({img: post.url})))
+	  .then(res => res.map(addToString))
+	  .then(res => console.log(res));
 }
 
-// ----------------------------------------------------------------------------------
-*/
-
-
+function openHtmlAsNewTab() {
+	setTimeout(function() {
+		console.log(htmlChildren);
+		var html = "<html><body>" + htmlChildren + "</body></html>";
+		var url = "data:text/html," + encodeURIComponent(html);
+		chrome.tabs.create({url: url, active: false});		
+	}, 1000);
+	// Wait for one second, then create tab with the html string
+}
 
 
 //////////////////////////////////// Search URL selection
