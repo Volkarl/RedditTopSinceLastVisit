@@ -6,8 +6,9 @@
 
 'use strict';
 
-var visitData;
-var nowEpoch;
+var visitData; 		// Local copy of sync data
+var nowEpoch;		// Shared epoch time at start of function execution
+var htmlChildren; 	// Html layout of the inner part of the tab that opens when a button is clicked (contains pictures, gifs, comment hyperlinks, etc.)
 
 function getSubreddit(tab){
 	var regex = /reddit.com\/r\/(\w+)/gim;
@@ -162,8 +163,6 @@ document.body.onload = function() {
 	});
 }
 
-var htmlChildren; //////////////////////// This will 
-
 function createHtmlChildren(pushshiftUrl) {
 	const addToString = post => {
 		var html = `
@@ -194,8 +193,9 @@ function createHtmlChildren(pushshiftUrl) {
 function openHtmlAsNewTab() {
 	setTimeout(function() {
 		console.log(htmlChildren);
-		var html = "<html><body>" + htmlChildren + "</body></html>";
-		var url = "data:text/html," + encodeURIComponent(html);
+		var pageContent;
+		htmlChildren === undefined ? pageContent = "<h1>No results found</h1>" : pageContent = "<html><body>" + htmlChildren + "</body></html>";
+		var url = "data:text/html," + encodeURIComponent(pageContent);
 		chrome.tabs.create({url: url, active: false});		
 	}, 1000);
 	// Wait for one second, then create tab with the html string
