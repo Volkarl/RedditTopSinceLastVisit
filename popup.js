@@ -20,6 +20,7 @@ function getPushshiftUrl(subreddit, lastVisitEpoch){
 	var searchParams = "subreddit=" + subreddit + "&after=" + lastVisitEpoch + "&before=" + nowEpoch + "&sort_type=num_comments&sort=desc&size=50";
 	return "https://api.pushshift.io/reddit/submission/search/?" + searchParams;
 }
+// Example pushshift url for testing purposes: https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
 
 function renderPage(pushshiftUrl){
 	console.log("Creating tab " + pushshiftUrl);
@@ -90,7 +91,6 @@ function generateButtonText(subreddit) {
 
 function populatePopup() {
 	for (var subreddit in visitData) {
-		// Make percentage instead of pixels TODO ////////////////////////
 		addButton('sBtn-' + subreddit, subreddit, generateButtonText(subreddit), function() {
 			loadSubreddit(this.value);
 		});
@@ -133,6 +133,7 @@ function removeSubreddit() {
 function reloadPage() {
 	//location.reload();
 }
+/////////////////// I'm still not a fan of this. It works, but it feels like a nuclear option, and also it clears the console whenever everything is reloaded.
 
 // Add event handlers
 document.addEventListener('DOMContentLoaded', function() {
@@ -161,7 +162,7 @@ document.body.onload = function() {
 	});
 }
 
-var htmlChildren;
+var htmlChildren; //////////////////////// This will 
 
 function createHtmlChildren(pushshiftUrl) {
 	const addToString = post => {
@@ -170,16 +171,22 @@ function createHtmlChildren(pushshiftUrl) {
 				<a href="${post.img}">
 					<img src="${post.img}"/>
 				</a>
-			</div>`;
+			</div>
+			<p>
+				<a href="${post.comments}">${post.num_comments} comments</a>
+			</p>
+			<hr>
+			`;
 
 		htmlChildren === undefined ? htmlChildren = html : htmlChildren += html;
+
 	  	return post
 	  }
 
 	fetch(pushshiftUrl)
 	  .then(res => res.json())
 	  .then(res => res.data)
-	  .then(res => res.map(post => ({img: post.url})))
+	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments})))
 	  .then(res => res.map(addToString))
 	  .then(res => console.log(res));
 }
