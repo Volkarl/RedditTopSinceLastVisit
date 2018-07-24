@@ -163,32 +163,129 @@ document.body.onload = function() {
 	});
 }
 
+function createHtml(pushshiftUrl, subreddit, fromEpoch, toEpoch) {
+	///////////////NOT USED YET
+	return HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + createHtmlChildren(pushshiftUrl);
+}
+
 function createHtmlChildren(pushshiftUrl) {
 	const addToString = post => {
-		var html = `
-			<div>
-				<a href="${post.img}">
-					<img src="${post.img}"/>
-				</a>
-			</div>
-			<p>
-				<a href="${post.comments}">${post.num_comments} comments</a>
-			</p>
-			<hr>
-			`;
+
+		var element;
+
+		// Is it an image?
+		if(post.img.endsWith(".jpg") || post.img.endsWith(".png"))
+			element = HtmlImage(post.img);
+		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
+			element = HtmlImageWithoutExtension(post.img);
+
+		// Is it a gif?
+
+		var html = HtmlPostTitle(post.title) + element + HtmlComments(post.comments, post.num_comments) + HtmlLineBreak();
 
 		htmlChildren === undefined ? htmlChildren = html : htmlChildren += html;
 
 	  	return post
 	  }
 
-	fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=videos&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50')
+	fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
 	  .then(res => res.map(addToString))
 	  .then(res => console.log(res));
 }
+
+
+function HtmlPageTitle(subreddit) {
+	return "";
+}
+
+function HtmlTimeSpan(fromEpoch, toEpoch) {
+	return "";
+}
+
+function HtmlPostTitle(postTitle) {
+	return ""; /////fix
+}
+
+
+function HtmlNewLine() {
+	return `
+			`;
+}
+
+function HtmlLineBreak() {
+	return HtmlNewLine() + 
+		`<hr>`;
+}
+
+function HtmlComments(threadUrl, num_comments) {
+	return HtmlNewLine() + 
+		`<p>
+			<a href="${threadUrl}">${num_comments} comments</a>
+		</p>`;
+}
+
+function HtmlImage(imageUrl) {
+	return HtmlNewLine() + 
+		`<div>
+			<a href="${imageUrl}">
+				<img src="${imageUrl}"/>
+			</a>
+		</div>`;
+}
+
+function HtmlGfycat() {
+	return HtmlNewLine() + 
+		`<div>
+			<a href="${imageUrl}">
+				<img src="${imageUrl}"/>
+			</a>
+		</div>`;
+}
+
+function HtmlYoutube() {
+	return HtmlNewLine() + 
+		`<div>
+			<a href="${imageUrl}">
+				<img src="${imageUrl}"/>
+			</a>
+		</div>`;
+}
+
+function HtmlSelfPost() {
+	return HtmlNewLine() + 
+		`<div>
+			<a href="${imageUrl}">
+				<img src="${imageUrl}"/>
+			</a>
+		</div>`;
+}
+
+function HtmlImageWithoutExtension(url) {
+	return HtmlImage(url + ".jpg");
+}
+
+function HtmlRedIt() {
+	return HtmlNewLine() + 
+		`<div>
+			<a href="${imageUrl}">
+				<img src="${imageUrl}"/>
+			</a>
+		</div>`;
+}
+
+function HtmlOtherVideo() {
+	return HtmlNewLine() + 
+		`<div>
+			<a href="${imageUrl}">
+				<img src="${imageUrl}"/>
+			</a>
+		</div>`;
+}
+
+
 
 function openHtmlAsNewTab() {
 	setTimeout(function() {
