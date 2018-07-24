@@ -182,10 +182,10 @@ function createHtmlChildren(pushshiftUrl) {
 	  	return post
 	  }
 
-	fetch(pushshiftUrl)
+	fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=videos&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50')
 	  .then(res => res.json())
 	  .then(res => res.data)
-	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments})))
+	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
 	  .then(res => res.map(addToString))
 	  .then(res => console.log(res));
 }
