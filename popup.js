@@ -200,7 +200,10 @@ function createHtmlContent(pushshiftUrl) {
 			///////////////Doesnt work yet
 
 		// Is it a gfycat?
-
+		else if(post.img.includes("gfycat.com"))
+//			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
+			element = `<div style='position:relative;padding-bottom:54%'><iframe src='${post.img}' frameborder='0' scrolling='no' width='100%' height='100%' style='position:absolute;top:0;left:0;' allowfullscreen></iframe></div>`
+			///// Fits entire screen: I need to look at how that's done
 
 		// Is it a gif?
 		else if(extension === "gif" || extension === "gifv" || extension === "mp4")
@@ -309,6 +312,7 @@ function HtmlMp4(imageUrl) {
 		`<video controls autoplay loop muted src="${imageUrl}"> 
 			Your browser does not support the video tag. 
 		</video>`);
+	// In order for autoplay to work on multiple videos at once, they have to be muted
 }
 /*
 IMGUR EMBED GIFS??
