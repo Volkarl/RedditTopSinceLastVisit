@@ -171,9 +171,9 @@ document.body.onload = function() {
 }
 
 function createHtml(pushshiftUrl, subreddit, fromEpoch, toEpoch) {
-	htmlChildren = null;
+	htmlChildren = undefined;
 	return createHtmlContent(pushshiftUrl).then(html => htmlChildren === undefined 
-		? HtmlBody(HtmlPageTitle("No results found") + HtmlTimeSpan(fromEpoch, toEpoch))
+		? HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + HtmlPostTitle("No results found"))
 		: HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + htmlChildren));
 	// Analyse json and create HTML string with all images, pictures, videos, etc.
 }
@@ -181,17 +181,64 @@ function createHtml(pushshiftUrl, subreddit, fromEpoch, toEpoch) {
 function createHtmlContent(pushshiftUrl) {
 	const addToString = post => {
 
+		console.log(post);
+
+		var extension = post.img.substring(post.img.lastIndexOf('.') + 1, post.img.length).toString(); 
+		/////////////// THis works, but a good regex would be better, because it chops up gfycat links, etc. too
+
 		var element;
+
+
+		// Is it an image (or some gifs)?
+		if(extension === "jpg" || extension === "png")
+			element = HtmlImage(post.img);
+
+		// Is it an imgur album?
+		else if(post.img.includes("imgur.com/a"))
+			element = `<blockquote><a href="${post.img}">Album</a></blockquote>`;
+			//<script async src="http://s.imgur.com/min/embed.js"></script>
+			///////////////Doesnt work yet
+
+		// Is it a gfycat?
+
+
+		// Is it a gif?
+		else if(extension === "gif" || extension === "gifv" || extension === "mp4")
+			element = HtmlMp4(post.img.toString().slice(0, - (extension.length)) + "mp4");
+
+		// Is it a picture without extension?
+		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
+			element = HtmlImageWithoutExtension(post.img);
+
+
+
+
+
+/*
 
 		// Is it an image (or some gifs)?
 		if(post.img.endsWith(".jpg") || post.img.endsWith(".png"))
 			element = HtmlImage(post.img);
-		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
-			element = HtmlImageWithoutExtension(post.img);
+
+		// Is it an imgur album?
+		else if(post.img.includes("imgur.com/a"))
+			element = `<blockquote><a href="${post.img}">Album</a></blockquote>`;
+			//<script async src="http://s.imgur.com/min/embed.js"></script>
 
 		// Is it a gif?
-		else if(post.img.endsWith(".gif") || post.img.endsWith(".gifv"))
-			element = HtmlImage(post.img);
+		else if(post.img.endsWith(".gif") || post.img.endsWith(".gifv") || post.img.endsWith(".mp4"))
+			element = HtmlMp4(post.img);
+
+		// Is it a picture without extension?
+		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
+			element = HtmlImageWithoutExtension(post.img);
+*/
+
+		//PLEASE, do not use the .gif ending. Use the .gifv ending instead! While imgur will serve the image regardless of the extension, you must use .gifv to force the web video.
+		// If it doesn't autoplay, then change gif to gifv?
+		// What about .mp4?
+		// If mp4 gifs work, I should just change all shortcuts to mp4 because it loads faster
+
 
 		// Is it a video?
 //		else if (post.domain.includes("v.redd.it"))
@@ -204,7 +251,8 @@ function createHtmlContent(pushshiftUrl) {
 	  	return post
 	  }
 
-	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50') //////Todo
+//https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
+	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=gifs&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
@@ -256,12 +304,32 @@ function HtmlImage(imageUrl) {
 		</div>`;
 }
 
+function HtmlMp4(imageUrl) {
+	return HtmlNewLine() + HtmlDiv(
+		`<video controls autoplay loop src="${imageUrl}"> 
+			Your browser does not support the video tag. 
+		</video>`);
+}
+/*
+IMGUR EMBED GIFS??
+
+	<blockquote class="imgur-embed-pub" lang="en" data-id="91S22q6" data-context="false">
+		<a href="//imgur.com/91S22q6">View post on imgur.com</a>
+	</blockquote>
+    <script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+*/
+
+function HtmlDiv(content) {
+	return HtmlNewLine() + 
+		`<div>
+			${content}
+		</div>`;
+}
+
 function HtmlGfycat() {
 	return HtmlNewLine() + 
 		`<div>
-			<a href="${imageUrl}">
-				<img src="${imageUrl}"/>
-			</a>
+
 		</div>`;
 }
 
