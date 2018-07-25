@@ -306,7 +306,7 @@ function HtmlImage(imageUrl) {
 
 function HtmlMp4(imageUrl) {
 	return HtmlNewLine() + HtmlDiv(
-		`<video controls autoplay loop src="${imageUrl}"> 
+		`<video controls autoplay loop muted src="${imageUrl}"> 
 			Your browser does not support the video tag. 
 		</video>`);
 }
