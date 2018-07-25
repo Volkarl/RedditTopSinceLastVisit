@@ -23,10 +23,17 @@ function getPushshiftUrl(subreddit, lastVisitEpoch){
 }
 // Example pushshift url for testing purposes: https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
 
-function renderPage(pushshiftUrl){
+function renderPage(pushshiftUrl, subreddit, toEpoch, fromEpoch){
 	console.log("Creating tab " + pushshiftUrl);
-	createHtmlChildren(pushshiftUrl); // Analyse json and create HTML string with all images, pictures, videos, etc.
-	openHtmlAsNewTab(); 
+	createHtml(pushshiftUrl, subreddit, toEpoch, fromEpoch).then(html => openHtmlAsNewTab(html));
+	// Encode the pushshiftUrl json file into some html representation, then open as new tab
+}
+
+function openHtmlAsNewTab(html) {
+//	console.log(html);
+	console.log("Opening new tab");
+	var url = "data:text/html," + encodeURIComponent(html);
+	chrome.tabs.create({url: url, active: false});
 }
 
 function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
@@ -102,7 +109,7 @@ function loadSubreddit(subreddit) {
 	console.log("Clicked " + subreddit);
 	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, true);
 	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
-	renderPage(pushshiftUrl);
+	renderPage(pushshiftUrl, subreddit, nowEpoch, lastVisitEpoch);
 }
 
 function addNewSubreddit() {
@@ -164,22 +171,31 @@ document.body.onload = function() {
 }
 
 function createHtml(pushshiftUrl, subreddit, fromEpoch, toEpoch) {
-	///////////////NOT USED YET
-	return HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + createHtmlChildren(pushshiftUrl);
+	htmlChildren = null;
+	return createHtmlContent(pushshiftUrl).then(html => htmlChildren === undefined 
+		? HtmlBody(HtmlPageTitle("No results found") + HtmlTimeSpan(fromEpoch, toEpoch))
+		: HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + htmlChildren));
+	// Analyse json and create HTML string with all images, pictures, videos, etc.
 }
 
-function createHtmlChildren(pushshiftUrl) {
+function createHtmlContent(pushshiftUrl) {
 	const addToString = post => {
 
 		var element;
 
-		// Is it an image?
+		// Is it an image (or some gifs)?
 		if(post.img.endsWith(".jpg") || post.img.endsWith(".png"))
 			element = HtmlImage(post.img);
 		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
 			element = HtmlImageWithoutExtension(post.img);
 
 		// Is it a gif?
+		else if(post.img.endsWith(".gif") || post.img.endsWith(".gifv"))
+			element = HtmlImage(post.img);
+
+		// Is it a video?
+//		else if (post.domain.includes("v.redd.it"))
+//			element = HtmlImageWithoutExtension(post.img);
 
 		var html = HtmlPostTitle(post.title) + element + HtmlComments(post.comments, post.num_comments) + HtmlLineBreak();
 
@@ -188,25 +204,29 @@ function createHtmlChildren(pushshiftUrl) {
 	  	return post
 	  }
 
-	fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50') //////Todo
+	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=pics&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
-	  .then(res => res.map(addToString))
-	  .then(res => console.log(res));
+	  .then(res => res.map(addToString));
+//	  .then(res => console.log(res)); //cant have this, otherwise it returns shit
 }
 
 
-function HtmlPageTitle(subreddit) {
-	return "";
+function HtmlBody(pageContent) {
+	return `<html><body> ${pageContent} </body></html>`;
 }
 
-function HtmlTimeSpan(fromEpoch, toEpoch) {
+function HtmlPageTitle(title) {
+	return `<h1>${title}</h1>`;
+}
+
+function HtmlTimeSpan(fromEpoch, toEpoch) { /////fix
 	return "";
 }
 
 function HtmlPostTitle(postTitle) {
-	return ""; /////fix
+	return `<b>${postTitle}</b>`; 
 }
 
 
@@ -283,19 +303,6 @@ function HtmlOtherVideo() {
 				<img src="${imageUrl}"/>
 			</a>
 		</div>`;
-}
-
-
-
-function openHtmlAsNewTab() {
-	setTimeout(function() {
-		console.log(htmlChildren);
-		var pageContent;
-		htmlChildren === undefined ? pageContent = "<h1>No results found</h1>" : pageContent = "<html><body>" + htmlChildren + "</body></html>";
-		var url = "data:text/html," + encodeURIComponent(pageContent);
-		chrome.tabs.create({url: url, active: false});		
-	}, 1000);
-	// Wait for one second, then create tab with the html string
 }
 
 
