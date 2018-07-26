@@ -201,9 +201,7 @@ function createHtmlContent(pushshiftUrl) {
 
 		// Is it a gfycat?
 		else if(post.img.includes("gfycat.com"))
-//			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
-			element = `<div style='position:relative;padding-bottom:54%'><iframe src='${post.img}' frameborder='0' scrolling='no' width='100%' height='100%' style='position:absolute;top:0;left:0;' allowfullscreen></iframe></div>`
-			///// Fits entire screen: I need to look at how that's done
+			element = HtmlGfycat(post.img);
 
 		// Is it a gif?
 		else if(extension === "gif" || extension === "gifv" || extension === "mp4")
@@ -213,39 +211,22 @@ function createHtmlContent(pushshiftUrl) {
 		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
 			element = HtmlImageWithoutExtension(post.img);
 
-
-
-
-
-/*
-
-		// Is it an image (or some gifs)?
-		if(post.img.endsWith(".jpg") || post.img.endsWith(".png"))
-			element = HtmlImage(post.img);
-
-		// Is it an imgur album?
-		else if(post.img.includes("imgur.com/a"))
-			element = `<blockquote><a href="${post.img}">Album</a></blockquote>`;
-			//<script async src="http://s.imgur.com/min/embed.js"></script>
-
-		// Is it a gif?
-		else if(post.img.endsWith(".gif") || post.img.endsWith(".gifv") || post.img.endsWith(".mp4"))
-			element = HtmlMp4(post.img);
-
-		// Is it a picture without extension?
-		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
-			element = HtmlImageWithoutExtension(post.img);
-*/
-
-		//PLEASE, do not use the .gif ending. Use the .gifv ending instead! While imgur will serve the image regardless of the extension, you must use .gifv to force the web video.
-		// If it doesn't autoplay, then change gif to gifv?
-		// What about .mp4?
-		// If mp4 gifs work, I should just change all shortcuts to mp4 because it loads faster
-
+		// Is it a youtube video?
+		else if(post.domain.includes("youtube") || post.domain.includes("youtu.be"))
+			element = HtmlYoutube(post.img);
 
 		// Is it a video?
 //		else if (post.domain.includes("v.redd.it"))
 //			element = HtmlImageWithoutExtension(post.img);
+
+
+		// Is it none of the above?
+		else 
+			element = HtmlNewLine() + HtmlDiv(HtmlLink(post.img, "Unrecognized source url")); 
+			///// I feel like post.img should be renamed
+
+
+
 
 		var html = HtmlPostTitle(post.title) + element + HtmlComments(post.comments, post.num_comments) + HtmlLineBreak();
 
@@ -292,9 +273,13 @@ function HtmlLineBreak() {
 }
 
 function HtmlComments(threadUrl, num_comments) {
+	return HtmlLink(threadUrl, num_comments + " comments");
+}
+
+function HtmlLink(url, text) {
 	return HtmlNewLine() + 
 		`<p>
-			<a href="${threadUrl}">${num_comments} comments</a>
+			<a href="${url}">${text}</a>
 		</p>`;
 }
 
@@ -330,20 +315,35 @@ function HtmlDiv(content) {
 		</div>`;
 }
 
-function HtmlGfycat() {
-	return HtmlNewLine() + 
-		`<div>
-
-		</div>`;
+function HtmlMp4(imageUrl) {
+	return HtmlNewLine() + HtmlDiv(
+		`<video controls autoplay loop muted src="${imageUrl}"> 
+			Your browser does not support the video tag. 
+		</video>`);
+	// In order for autoplay to work on multiple videos at once, they have to be muted
 }
 
-function HtmlYoutube() {
+function HtmlGfycat(url) {
+// Other solution that doesn't fit entire screen
+// So it probably has something to do with the div and inner width/height at 100%?
+//			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
 	return HtmlNewLine() + 
-		`<div>
-			<a href="${imageUrl}">
-				<img src="${imageUrl}"/>
-			</a>
-		</div>`;
+	`<div style='position:relative;padding-bottom:54%'>
+		<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style='position:absolute;top:0;left:0;' allowfullscreen></iframe>
+	</div>`;
+			///// Fits entire screen: I need to look at how that's done
+}
+
+function HtmlYoutube(url) {
+	const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
+	//Turns: https://m.youtube.com/watch?v=hWLjYJ4BzvI&feature=youtu.be into hWLjYJ4BzvI, etc, see: https://stackoverflow.com/questions/6903823/regex-for-youtube-id
+
+	var result = regex.exec(url);
+	if(result === null) return HtmlNewLine() + HtmlDiv(HtmlLink(url, "Invalid YouTube link"));
+
+	var videoId = result[1]; 
+	return HtmlNewLine() + HtmlDiv(
+		`<iframe width="420" height="345" src="${"https://youtube.com/embed/" + videoId}"></iframe>`);
 }
 
 function HtmlSelfPost() {
