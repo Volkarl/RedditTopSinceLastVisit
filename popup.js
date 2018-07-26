@@ -32,8 +32,11 @@ function renderPage(pushshiftUrl, subreddit, toEpoch, fromEpoch){
 function openHtmlAsNewTab(html) {
 //	console.log(html);
 	console.log("Opening new tab");
-	var url = "data:text/html," + encodeURIComponent(html);
-	chrome.tabs.create({url: url, active: false});
+	//var url = "data:text/html," + encodeURIComponent(html);
+	//chrome.tabs.create({url: url, active: false});
+	var w = window.open();
+//	w.document.open().write(html);
+	w.document.body.innerHTML = html;
 }
 
 function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
@@ -194,14 +197,32 @@ function createHtmlContent(pushshiftUrl) {
 			element = HtmlImage(post.img);
 
 		// Is it an imgur album?
-		else if(post.img.includes("imgur.com/a"))
-			element = `<blockquote><a href="${post.img}">Album</a></blockquote>`;
-			//<script async src="http://s.imgur.com/min/embed.js"></script>
-			///////////////Doesnt work yet
+		else if(post.img.includes("imgur.com/a")) {
+			var regex = /imgur.com\/a\/(\w+)/i;
+			var albumId = regex.exec(post.img.toString())[1];
+			console.log("Album: " + albumId);
+			var tempHtml = `<blockquote class="imgur-embed-pub" lang="en" data-id="a/${albumId}">
+							<a href="https://imgur.com/a/${albumId}">${post.title}</a>
+						</blockquote>
+						<script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>`;
+			var newDiv = document.createElement("div");
+    		newDiv.setAttribute('id', "penis");
+			newDiv.innerHTML = tempHtml;
+    		document.getElementById("hiddenDiv").appendChild(newDiv);
+    		var newelem2 = document.getElementById("penis");
+    		element = newelem2.html;
+
+
+			// Used iframely.com to figure this one out
+//			element = HtmlPostTitle("Album: " + albumId);
+		}
 
 		// Is it a gfycat?
 		else if(post.img.includes("gfycat.com"))
 			element = HtmlGfycat(post.img);
+
+		// Is it a Giphy?
+		// <iframe src="https://giphy.com/embed/xpipBcvgSTptK?html5=true&amp;hideSocial=true" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
 
 		// Is it a gif?
 		else if(extension === "gif" || extension === "gifv" || extension === "mp4")
@@ -220,15 +241,24 @@ function createHtmlContent(pushshiftUrl) {
 //			element = HtmlImageWithoutExtension(post.img);
 
 
+		else if(post.domain.includes("twitter"))
+			element = HtmlTwitter(post.img);
+
+		// Is it a dailymotion video?
+		// <div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.0412%;"><iframe src="https://www.dailymotion.com/embed/video/x5tfkgk" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe></div>
+
+
+
 		// Is it none of the above?
 		else 
-			element = HtmlNewLine() + HtmlDiv(HtmlLink(post.img, "Unrecognized source url")); 
+			element = HtmlDiv(HtmlLink(post.img, "Unrecognized source url")); 
 			///// I feel like post.img should be renamed
 
 
 
+		var html = HtmlDiv(HtmlPostTitle(post.title) + HtmlNewLine() + element + HtmlNewLine() + HtmlComments(post.comments, post.num_comments) + HtmlNewLine() + HtmlLineBreak() + HtmlNewLine());
 
-		var html = HtmlPostTitle(post.title) + element + HtmlComments(post.comments, post.num_comments) + HtmlLineBreak();
+		console.log(html);
 
 		htmlChildren === undefined ? htmlChildren = html : htmlChildren += html;
 
@@ -236,7 +266,7 @@ function createHtmlContent(pushshiftUrl) {
 	  }
 
 //https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
-	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=gifs&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
+	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
@@ -247,6 +277,10 @@ function createHtmlContent(pushshiftUrl) {
 
 function HtmlBody(pageContent) {
 	return `<html><body> ${pageContent} </body></html>`;
+}
+
+function HtmlTwitter(url) {
+	return HtmlLink(url, "Twitter post");
 }
 
 function HtmlPageTitle(title) {
@@ -263,8 +297,7 @@ function HtmlPostTitle(postTitle) {
 
 
 function HtmlNewLine() {
-	return `
-			`;
+	return `\n`;
 }
 
 function HtmlLineBreak() {
@@ -299,20 +332,13 @@ function HtmlMp4(imageUrl) {
 		</video>`);
 	// In order for autoplay to work on multiple videos at once, they have to be muted
 }
-/*
-IMGUR EMBED GIFS??
-
-	<blockquote class="imgur-embed-pub" lang="en" data-id="91S22q6" data-context="false">
-		<a href="//imgur.com/91S22q6">View post on imgur.com</a>
-	</blockquote>
-    <script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
-*/
 
 function HtmlDiv(content) {
 	return HtmlNewLine() + 
-		`<div>
-			${content}
-		</div>`;
+`<div>
+	${content}
+</div>`;
+		//style="left: 0; width: 100%; height: 0; position: relative;" 
 }
 
 function HtmlMp4(imageUrl) {
@@ -327,11 +353,13 @@ function HtmlGfycat(url) {
 // Other solution that doesn't fit entire screen
 // So it probably has something to do with the div and inner width/height at 100%?
 //			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
-	return HtmlNewLine() + 
-	`<div style='position:relative;padding-bottom:54%'>
-		<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style='position:absolute;top:0;left:0;' allowfullscreen></iframe>
-	</div>`;
-			///// Fits entire screen: I need to look at how that's done
+	return HtmlDiv(
+	`<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: relative;" allowfullscreen></iframe>`);
+	///// The frame fits entire screen, while the giphy only fits its size, so it looks a bit dumb
+
+//	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 74.0247%;">
+//				<iframe src="${url}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
+//			</div>`;
 }
 
 function HtmlYoutube(url) {
@@ -342,8 +370,11 @@ function HtmlYoutube(url) {
 	if(result === null) return HtmlNewLine() + HtmlDiv(HtmlLink(url, "Invalid YouTube link"));
 
 	var videoId = result[1]; 
-	return HtmlNewLine() + HtmlDiv(
-		`<iframe width="420" height="345" src="${"https://youtube.com/embed/" + videoId}"></iframe>`);
+	return HtmlNewLine() + 
+		`<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.2493%;">
+			<iframe src="${"https://youtube.com/embed/" + videoId}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
+		</div>`;
+	// HtmlDiv(<iframe width="420" height="345" src="${"https://youtube.com/embed/" + videoId}"></iframe>);
 }
 
 function HtmlSelfPost() {
