@@ -200,11 +200,9 @@ function createHtmlContent(pushshiftUrl) {
 
 		// Is it an imgur album?
 		else if(post.img.includes("imgur.com/a")) {
-
-			var regex = /imgur.com\/a\/(\w+)/i;
+			var regex = /imgur.com\/a\/(\w+)/i; ///////change to const?
 			var albumId = regex.exec(post.img.toString())[1];
 			console.log("Album: " + albumId);
-
 			element = HtmlImgurAlbum(albumId);
 		}
 
@@ -212,7 +210,7 @@ function createHtmlContent(pushshiftUrl) {
 		else if(post.img.includes("gfycat.com"))
 			element = HtmlGfycat(post.img);
 
-		// Is it a Giphy?
+		// Is it a Giphy? ////////////
 		// <iframe src="https://giphy.com/embed/xpipBcvgSTptK?html5=true&amp;hideSocial=true" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
 
 		// Is it a gif?
@@ -227,6 +225,15 @@ function createHtmlContent(pushshiftUrl) {
 		else if(post.domain.includes("youtube") || post.domain.includes("youtu.be"))
 			element = HtmlYoutube(post.img);
 
+		else if(post.domain.includes("pornhub"))
+			element = HtmlPorhub(post.img);
+
+		else if(post.domain.includes("redtube"))
+			element = HtmlRedtube(post.img);
+
+
+
+						//////////////////Fix
 		// Is it a video?
 //		else if (post.domain.includes("v.redd.it"))
 //			element = HtmlImageWithoutExtension(post.img);
@@ -247,7 +254,7 @@ function createHtmlContent(pushshiftUrl) {
 
 
 
-		var html = HtmlDiv(HtmlPostTitle(post.title) + element + HtmlComments(post.comments, post.num_comments) + HtmlLineDivider());
+		var html = HtmlDiv(HtmlPostTitle(post.title) + HtmlLineBreak() + element + HtmlComments(post.comments, post.num_comments) + HtmlLineDivider());
 
 		console.log(html);
 
@@ -257,7 +264,7 @@ function createHtmlContent(pushshiftUrl) {
 	  }
 
 //https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
-	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
+	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=videos&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
@@ -367,22 +374,38 @@ function HtmlYoutube(url) {
 	const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i;
 	//Turns: https://m.youtube.com/watch?v=hWLjYJ4BzvI&feature=youtu.be into hWLjYJ4BzvI, etc, see: https://stackoverflow.com/questions/6903823/regex-for-youtube-id
 
-	var result = regex.exec(url);
-	if(result === null) return HtmlDiv(HtmlLink(url, "Invalid YouTube link"));
+	return HtmlIFrame("Youtube", regex, "https://youtube.com/embed/", url, "");
 
-	var videoId = result[1]; 
+/*	
+To make the video fill entire screen, use: 
+
 	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.2493%;">
-			<iframe src="${"https://youtube.com/embed/" + videoId}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
-		</div>`;
-	// HtmlDiv(<iframe width="420" height="345" src="${"https://youtube.com/embed/" + videoId}"></iframe>);
+				<iframe src="${"https://youtube.com/embed/" + videoId}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
+			</div>`;
+*/
 }
 
-function HtmlSelfPost() {
-	return `<div>
-				<a href="${imageUrl}">
-					<img src="${imageUrl}"/>
-				</a>
-			</div>`;
+function HtmlPorhub(url) {
+	const regex = /pornhub.com\/view_video\.php\?viewkey=(\w+)/i;
+	return HtmlIFrame("Pornhub", regex, "https://www.pornhub.com/embed/", url, "");
+}
+
+///////////////Only works with .com THAT SHOULD BE FIXABLE WITH BETTER REGEX
+
+function HtmlRedtube(url) {
+	const regex = /redtube.com\/(\w+)/i;
+	return HtmlIFrame("Redtube", regex, "https://embed.redtube.com/?id=", url, "");
+}
+
+function HtmlIFrame(hostName, regex, srcStart, url, srcEnd) {
+	var result = regex.exec(url);
+	if(result === null) return HtmlDiv(HtmlLink(url, `Invalid ${hostName} link`));
+	var videoId = result[1];
+	return `<iframe src="${srcStart}${videoId}${srcEnd}" frameborder="0" width="560" height="315" scrolling="no" allowfullscreen></iframe>`
+}
+
+function HtmlSelfPost() { //////////////////FIIX
+	return ``;
 }
 
 function HtmlImageWithoutExtension(url) {
@@ -394,14 +417,6 @@ function HtmlRedIt() {
 		`<a href="${imageUrl}">
 			<img src="${imageUrl}"/>
 		</a>`);
-}
-
-function HtmlOtherVideo() {
-	return `<div>
-				<a href="${imageUrl}">
-					<img src="${imageUrl}"/>
-				</a>
-			</div>`;
 }
 
 
