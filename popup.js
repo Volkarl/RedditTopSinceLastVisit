@@ -38,101 +38,7 @@ function openHtmlAsNewTab(html) {
 //	w.document.open().write(html);
 	w.document.body.innerHTML = html;
 
-	var script = w.document.createElement('img');
-	script.addEventListener('onload', penus);
-	script.addEventListener('onLoad', penus);
-
-//	var script = w.document.createElement('script'); 
-	//script.innerHTML = `var host=window.location.host,source="s.imgur.com/min/embed-controller.js";if(!window.imgurEmbed){window.imgurEmbed={tasks:0};var script=document.createElement("script");script.type="text/javascript",script.async=!0,script.src="//"+source,script.charset="utf-8",document.getElementsByTagName("head")[0].appendChild(script)}window.imgurEmbed.createIframe?imgurEmbed.createIframe():imgurEmbed.tasks++;`;
-//	script.src = '//s.imgur.com/min/embed.js';
-	var albums = w.document.getElementsByClassName("imgur-embed-pub");
-
-//var s = w.document.getElementsByTagName('script')[0];
-//script.text = `var host=window.location.host,source="s.imgur.com/min/embed-controller.js";if(!window.imgurEmbed){window.imgurEmbed={tasks:0};var script=document.createElement("script");script.type="text/javascript",script.async=!0,script.src="//"+source,script.charset="utf-8",document.getElementsByTagName("head")[0].appendChild(script)}window.imgurEmbed.createIframe?imgurEmbed.createIframe():imgurEmbed.tasks++;`
-	albums[0].parentNode.appendChild(script);
-
-//s.parentNode.insertBefore(script, s);
-
-//	insertAndExecute(w, html);
-//	setInnerHtml(w.document.body, html);
-
-//	var btn = w.document.createElement('button');
-//	btn.textContent = "Refresh";
-//    btn.addEventListener('click', function() {w.location.reload(true);});
-
-//	var scr = w.document.createElement('script');
-//	scr.src = "//s.imgur.com/min/embed.js";
-
-//	w.document.body.appendChild(btn);
-
-	//w.onload = res => execute(w);
-	//execute(w);
-
-
 }
-
-function penus() {
-	alert("woo");
-	var host=window.location.host,source="s.imgur.com/min/embed-controller.js";if(!window.imgurEmbed){window.imgurEmbed={tasks:0};var script=document.createElement("script");script.type="text/javascript",script.async=!0,script.src="//"+source,script.charset="utf-8",document.getElementsByTagName("head")[0].appendChild(script)}window.imgurEmbed.createIframe?imgurEmbed.createIframe():imgurEmbed.tasks++;
-}
-
-/*
-function execute(w) {
-    var scripts = Array.prototype.slice.call(w.document.getElementsByTagName("script"));
-    for (var i = 0; i < scripts.length; i++) {
-        if (scripts[i].src != "") {
-            var tag = w.createElement("script");
-            tag.src = scripts[i].src;
-            w.getElementsByTagName("head")[0].appendChild(tag);
-        }
-        else {
-            eval(scripts[i].innerHTML);
-        }
-    }
-
-}
-
-function insertAndExecute(w, text) {
-    w.document.body.innerHTML = text;
-    var scripts = Array.prototype.slice.call(w.document.getElementsByTagName("script"));
-    var p = w.document.createElement('p');
-    w.document.body.appendChild(p);
-    for (var i = 0; i < scripts.length; i++) {
-        if (scripts[i].src != "") {
-            var tag = w.document.createElement("script");
-            tag.src = scripts[i].src;
-            w.document.getElementsByTagName("head")[0].appendChild(tag);
-        }
-        else {
-		    p.innerHTML = scripts[i].innerHTML;
-            eval(scripts[i].innerHTML);
-        }    
-    }
-}
-
-function setInnerHtml(elm, html) {
-	elm.innerHTML = html;
-	var scripts = elm.getElementsByTagName("script");
-	// If we don't clone the results then "scripts"
-	// will actually update live as we insert the new
-	// tags, and we'll get caught in an endless loop
-	var scriptsClone = [];
-	for (var i = 0; i < scripts.length; i++) {
-		scriptsClone.push(scripts[i]);
-	}
-	for (var i = 0; i < scriptsClone.length; i++) {
-		var currentScript = scriptsClone[i];
-		var s = document.createElement("script");
-		// Copy all the attributes from the original script
-		for (var j = 0; j < currentScript.attributes.length; j++) {
-			var a = currentScript.attributes[j];
-			s.setAttribute(a.name, a.value);
-		}
-		s.appendChild(document.createTextNode(currentScript.innerHTML));
-		currentScript.parentNode.replaceChild(s, currentScript);
-	}
-}
-*/
 
 function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
 	if(reloadAfterSync) {
@@ -300,58 +206,7 @@ function createHtmlContent(pushshiftUrl) {
 			var albumId = regex.exec(post.img.toString())[1];
 			console.log("Album: " + albumId);
 
-			element = `<blockquote class="imgur-embed-pub" lang="en" data-id="a/${albumId}">
-							<a href="https://imgur.com/a/${albumId}">${post.title}</a>
-						</blockquote>`;
-//						<script async charset="utf-8">var host=window.location.host,source="s.imgur.com/min/embed-controller.js";if(!window.imgurEmbed){window.imgurEmbed={tasks:0};var script=document.createElement("script");script.type="text/javascript",script.async=!0,script.src="//"+source,script.charset="utf-8",document.getElementsByTagName("head")[0].appendChild(script)}window.imgurEmbed.createIframe?imgurEmbed.createIframe():imgurEmbed.tasks++;
-//# sourceMappingURL=embed.js.map</script>
-
-//var host=window.location.host,source="s.imgur.com/min/embed-controller.js";if(!window.imgurEmbed){window.imgurEmbed={tasks:0};var script=document.createElement("script");script.type="text/javascript",script.async=!0,script.src="//"+source,script.charset="utf-8",document.getElementsByTagName("head")[0].appendChild(script)}window.imgurEmbed.createIframe?imgurEmbed.createIframe():imgurEmbed.tasks++;
-//# sourceMappingURL=embed.js.map
-/*
-			element = 	`<blockquote class="imgur-embed-pub" lang="en" data-id="a/${albumId}">
-							<a href="https://imgur.com/a/${albumId}">${post.title}</a>
-						</blockquote>
-						`
-
-			var script = document.createElement('script');
-			script.onload = function () {
-			    //do stuff with the script
-			};
-			script.src = "//s.imgur.com/min/embed.js";
-
-			var tempdiv = document.createElement('div');
-			tempdiv.innerHTML = `<blockquote class="imgur-embed-pub" lang="en" data-id="a/${albumId}">
-									<a href="https://imgur.com/a/${albumId}">${post.title}</a>
-								</blockquote>`;
-			tempdiv.appendChild(script); //or something of the likes
-
-			console.log(tempdiv);
-
-/*			element = `
-<div id="iframely-content">
-<iframe allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true" style="height: 700px; width: 740px; margin: 10px 0px; padding: 0px;" class="imgur-embed-iframe-pub imgur-embed-iframe-pub-a-HhKn0ED-true-540" scrolling="no" src="https://imgur.com/a/HhKn0ED/embed?pub=true&amp;ref=https%3A%2F%2Fiframe.ly%2FaK3I7ig%3Fapp%3D1&amp;w=540" id="imgur-embed-iframe-pub-a-HhKn0ED"></iframe><script async="" src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
-</div>
-`
-*/
-/*
-			var regex = /imgur.com\/a\/(\w+)/i;
-			var albumId = regex.exec(post.img.toString())[1];
-			console.log("Album: " + albumId);
-			var tempHtml = `<blockquote class="imgur-embed-pub" lang="en" data-id="a/${albumId}">
-							<a href="https://imgur.com/a/${albumId}">${post.title}</a>
-						</blockquote>
-						<script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>`;
-			var newDiv = document.createElement("div");
-    		newDiv.setAttribute('id', "penis");
-			newDiv.innerHTML = tempHtml;
-    		document.getElementById("hiddenDiv").appendChild(newDiv);
-    		var newelem2 = document.getElementById("penis");
-    		element = newelem2.html;
-*/
-
-			// Used iframely.com to figure this one out
-//			element = HtmlPostTitle("Album: " + albumId);
+			element = HtmlImgurAlbum(albumId);
 		}
 
 		// Is it a gfycat?
@@ -411,9 +266,22 @@ function createHtmlContent(pushshiftUrl) {
 //	  .then(res => console.log(res)); //cant have this, otherwise it returns shit
 }
 
-
+			
 function HtmlBody(pageContent) {
 	return `<html><body> ${pageContent} </body></html>`;
+}
+
+function HtmlImgurAlbum(albumId) {
+	// The official way this is done, according to iframely.com:
+	/*
+		<blockquote class="imgur-embed-pub" lang="en" data-id="a/twP6C">
+			<a href="https://imgur.com/a/twP6C">Hey Imgur want to see some magic? (OC)</a>
+		</blockquote>
+		<script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+	*/
+	// However, this does not work, because the script never runs, since I embed into an already created page
+	// The result of the script is the following, and I simply inject the correct AlbumId's and chockingly, it works:
+	return `<iframe class="imgur-embed-iframe-pub imgur-embed-iframe-pub-a-${albumId}-true-540" scrolling="no" src="https://imgur.com/a/${albumId}/embed?pub=true" id="imgur-embed-iframe-pub-a-${albumId}" style="height: 900px; width: 540px; margin: 10px 0px;"></iframe>`;
 }
 
 function HtmlTwitter(url) {
