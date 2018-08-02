@@ -1,4 +1,4 @@
-# RedditTopSinceLastVisit
+# RedditTopperGetter
 Chrome extension that opens a page containing the top posts of any particular reddit subreddit since last you visited it. 
 
 ## Isn't reddit search enough?
