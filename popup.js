@@ -174,11 +174,11 @@ document.body.onload = function() {
 	});
 }
 
-function createHtml(pushshiftUrl, subreddit, fromEpoch, toEpoch) {
+function createHtml(pushshiftUrl, subreddit, toEpoch, fromEpoch) {
 	htmlChildren = undefined;
 	return createHtmlContent(pushshiftUrl).then(html => htmlChildren === undefined 
-		? HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + HtmlPostTitle("No results found"))
-		: HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(fromEpoch, toEpoch) + htmlChildren));
+		? HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(toEpoch, fromEpoch) + HtmlPostTitle("No results found"))
+		: HtmlBody(HtmlPageTitle(subreddit) + HtmlTimeSpan(toEpoch, fromEpoch) + htmlChildren));
 	// Analyse json and create HTML string with all images, pictures, videos, etc.
 }
 
@@ -190,10 +190,9 @@ function createHtmlContent(pushshiftUrl) {
 		console.log(post);
 
 		var extension = post.img.substring(post.img.lastIndexOf('.') + 1, post.img.length).toString(); 
-		/////////////// THis works, but a good regex would be better, because it chops up gfycat links, etc. too
+		/////////////// This works, but a good regex would be better, because it chops up gfycat links, etc. too
 
 		var element;
-
 
 		// Is it an image (or some gifs)?
 		if(extension === "jpg" || extension === "png")
@@ -248,7 +247,7 @@ function createHtmlContent(pushshiftUrl) {
 
 
 
-		var html = HtmlDiv(HtmlPostTitle(post.title) + HtmlNewLine() + element + HtmlNewLine() + HtmlComments(post.comments, post.num_comments) + HtmlNewLine() + HtmlLineBreak() + HtmlNewLine());
+		var html = HtmlDiv(HtmlPostTitle(post.title) + element + HtmlComments(post.comments, post.num_comments) + HtmlLineDivider());
 
 		console.log(html);
 
@@ -292,22 +291,22 @@ function HtmlPageTitle(title) {
 	return `<h1>${title}</h1>`;
 }
 
-function HtmlTimeSpan(fromEpoch, toEpoch) { /////fix
-	return "";
+function HtmlTimeSpan(toEpoch, fromEpoch) { 
+	var from = new Date(fromEpoch * 1000); // Needs epoch milliseconds as input
+	var to = new Date(toEpoch * 1000);
+	return HtmlPostTitle(`Spans ${convertEpochToDays(fromEpoch)} days`) + HtmlLineBreak() + HtmlPostTitle(`${from.toString()} to ${to.toString()}`) + HtmlLineDivider();
 }
 
 function HtmlPostTitle(postTitle) {
 	return `<b>${postTitle}</b>`; 
 }
 
-
-function HtmlNewLine() {
-	return `\n`;
+function HtmlLineBreak() {
+	return `<br>`;
 }
 
-function HtmlLineBreak() {
-	return HtmlNewLine() + 
-		`<hr>`;
+function HtmlLineDivider() {
+	return `<hr>`;
 }
 
 function HtmlComments(threadUrl, num_comments) {
@@ -315,23 +314,21 @@ function HtmlComments(threadUrl, num_comments) {
 }
 
 function HtmlLink(url, text) {
-	return HtmlNewLine() + 
-		`<p>
-			<a href="${url}">${text}</a>
-		</p>`;
+	return `<p>
+				<a href="${url}">${text}</a>
+			</p>`;
 }
 
 function HtmlImage(imageUrl) {
-	return HtmlNewLine() + 
-		`<div>
-			<a href="${imageUrl}">
-				<img src="${imageUrl}"/>
-			</a>
-		</div>`;
+	return `<div>
+				<a href="${imageUrl}">
+					<img src="${imageUrl}"/>
+				</a>
+			</div>`;
 }
 
 function HtmlMp4(imageUrl) {
-	return HtmlNewLine() + HtmlDiv(
+	return HtmlDiv(
 		`<video controls autoplay loop muted src="${imageUrl}"> 
 			Your browser does not support the video tag. 
 		</video>`);
@@ -339,15 +336,14 @@ function HtmlMp4(imageUrl) {
 }
 
 function HtmlDiv(content) {
-	return HtmlNewLine() + 
-`<div>
-	${content}
-</div>`;
+	return `<div>
+				${content}
+			</div>`;
 		//style="left: 0; width: 100%; height: 0; position: relative;" 
 }
 
 function HtmlMp4(imageUrl) {
-	return HtmlNewLine() + HtmlDiv(
+	return HtmlDiv(
 		`<video controls autoplay loop muted src="${imageUrl}"> 
 			Your browser does not support the video tag. 
 		</video>`);
@@ -372,23 +368,21 @@ function HtmlYoutube(url) {
 	//Turns: https://m.youtube.com/watch?v=hWLjYJ4BzvI&feature=youtu.be into hWLjYJ4BzvI, etc, see: https://stackoverflow.com/questions/6903823/regex-for-youtube-id
 
 	var result = regex.exec(url);
-	if(result === null) return HtmlNewLine() + HtmlDiv(HtmlLink(url, "Invalid YouTube link"));
+	if(result === null) return HtmlDiv(HtmlLink(url, "Invalid YouTube link"));
 
 	var videoId = result[1]; 
-	return HtmlNewLine() + 
-		`<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.2493%;">
+	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.2493%;">
 			<iframe src="${"https://youtube.com/embed/" + videoId}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
 		</div>`;
 	// HtmlDiv(<iframe width="420" height="345" src="${"https://youtube.com/embed/" + videoId}"></iframe>);
 }
 
 function HtmlSelfPost() {
-	return HtmlNewLine() + 
-		`<div>
-			<a href="${imageUrl}">
-				<img src="${imageUrl}"/>
-			</a>
-		</div>`;
+	return `<div>
+				<a href="${imageUrl}">
+					<img src="${imageUrl}"/>
+				</a>
+			</div>`;
 }
 
 function HtmlImageWithoutExtension(url) {
@@ -396,21 +390,18 @@ function HtmlImageWithoutExtension(url) {
 }
 
 function HtmlRedIt() {
-	return HtmlNewLine() + 
-		`<div>
-			<a href="${imageUrl}">
-				<img src="${imageUrl}"/>
-			</a>
-		</div>`;
+	return HtmlDiv(
+		`<a href="${imageUrl}">
+			<img src="${imageUrl}"/>
+		</a>`);
 }
 
 function HtmlOtherVideo() {
-	return HtmlNewLine() + 
-		`<div>
-			<a href="${imageUrl}">
-				<img src="${imageUrl}"/>
-			</a>
-		</div>`;
+	return `<div>
+				<a href="${imageUrl}">
+					<img src="${imageUrl}"/>
+				</a>
+			</div>`;
 }
 
 
