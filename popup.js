@@ -211,7 +211,7 @@ function createHtmlContent(pushshiftUrl) {
 			element = HtmlGfycat(post.img);
 
 		// Is it a Giphy?
-		else if(post.domain.includes"giphy")
+		else if(post.domain.includes("giphy"))
 			element = HtmlGiphy(post.img);
 
 		// Is it a gif?
