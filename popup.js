@@ -207,11 +207,12 @@ function createHtmlContent(pushshiftUrl) {
 		}
 
 		// Is it a gfycat?
-		else if(post.img.includes("gfycat.com"))
+		else if(post.img.includes("gfycat"))
 			element = HtmlGfycat(post.img);
 
-		// Is it a Giphy? ////////////
-		// <iframe src="https://giphy.com/embed/xpipBcvgSTptK?html5=true&amp;hideSocial=true" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
+		// Is it a Giphy?
+		else if(post.domain.includes"giphy")
+			element = HtmlGiphy(post.img);
 
 		// Is it a gif?
 		else if(extension === "gif" || extension === "gifv" || extension === "mp4")
@@ -243,9 +244,12 @@ function createHtmlContent(pushshiftUrl) {
 			element = HtmlTwitter(post.img);
 
 		// Is it a dailymotion video?
-		// <div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.0412%;"><iframe src="https://www.dailymotion.com/embed/video/x5tfkgk" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe></div>
+		else if(post.domain.includes("dailymotion"))
+			element = HtmlDailymotion(post.img);
 
-
+		// Is it a self post?
+		else if(post.is_self)
+			element = HtmlSelfPost();
 
 		// Is it none of the above?
 		else 
@@ -327,11 +331,9 @@ function HtmlLink(url, text) {
 }
 
 function HtmlImage(imageUrl) {
-	return `<div>
-				<a href="${imageUrl}">
-					<img src="${imageUrl}"/>
-				</a>
-			</div>`;
+	return HtmlDiv(`<a href="${imageUrl}">
+						<img src="${imageUrl}"/>
+					</a>`);
 }
 
 function HtmlMp4(imageUrl) {
@@ -357,17 +359,30 @@ function HtmlMp4(imageUrl) {
 	// In order for autoplay to work on multiple videos at once, they have to be muted
 }
 
+function HtmlGiphy(url) {
+	const regex = /giphy\.com\/gifs\/(\w+)/i;
+	return HtmlIFrame("Giphy", regex, "https://giphy.com/embed/", url, "");
+	//////// Doesn't work with all kinds of Giphy links yet
+}
+
 function HtmlGfycat(url) {
 // Other solution that doesn't fit entire screen
 // So it probably has something to do with the div and inner width/height at 100%?
 //			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
 	return HtmlDiv(
 	`<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: relative;" allowfullscreen></iframe>`);
-	///// The frame fits entire screen, while the giphy only fits its size, so it looks a bit dumb
+	///// The frame fits entire screen, while the gfycat only fits its size, so it looks a bit dumb
 
 //	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 74.0247%;">
 //				<iframe src="${url}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
 //			</div>`;
+
+
+}
+
+function HtmlDailymotion(url) {
+	const regex = /dailymotion\.com\/video\/(\w+)/i;
+	return HtmlIFrame("Dailymotion", regex, "https://www.dailymotion.com/embed/video/", url, "");
 }
 
 function HtmlYoutube(url) {
@@ -404,19 +419,13 @@ function HtmlIFrame(hostName, regex, srcStart, url, srcEnd) {
 	return `<iframe src="${srcStart}${videoId}${srcEnd}" frameborder="0" width="560" height="315" scrolling="no" allowfullscreen></iframe>`
 }
 
-function HtmlSelfPost() { //////////////////FIIX
+function HtmlSelfPost() {
 	return ``;
+	// Return nothing, because I don't know how to embed the contents of a self post (it's not in the JSON file)
 }
 
 function HtmlImageWithoutExtension(url) {
 	return HtmlImage(url + ".jpg");
-}
-
-function HtmlRedIt() {
-	return HtmlDiv(
-		`<a href="${imageUrl}">
-			<img src="${imageUrl}"/>
-		</a>`);
 }
 
 
