@@ -268,7 +268,7 @@ function createHtmlContent(pushshiftUrl) {
 	  }
 
 //https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
-	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=videos&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
+	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=nsfw_gifs&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
@@ -369,15 +369,22 @@ function HtmlGfycat(url) {
 // Other solution that doesn't fit entire screen
 // So it probably has something to do with the div and inner width/height at 100%?
 //			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
-	return HtmlDiv(
-	`<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: relative;" allowfullscreen></iframe>`);
+	//return HtmlDiv(
+	//`<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: relative;" allowfullscreen></iframe>`);
 	///// The frame fits entire screen, while the gfycat only fits its size, so it looks a bit dumb
 
 //	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 74.0247%;">
 //				<iframe src="${url}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
 //			</div>`;
 
+///////////////////// Make my iframes responsive? Absolute size, etc.?
 
+	const regex = /gfycat\.com\/(?:gifs\/detail\/)?(\w+)/i; // gifs/detail/ is an optional non capture group
+	//return `<div style="left: 0; width: 100%; position: relative;">
+	//			${HtmlIFrame("Gfycat", regex, "https://gfycat.com/", url, "")}
+	//		</div>`;
+	return HtmlIFrame("Gfycat", regex, "https://gfycat.com/", url, "");
+//Removed: padding-bottom: 74.0247%;
 }
 
 function HtmlDailymotion(url) {
@@ -416,7 +423,11 @@ function HtmlIFrame(hostName, regex, srcStart, url, srcEnd) {
 	var result = regex.exec(url);
 	if(result === null) return HtmlDiv(HtmlLink(url, `Invalid ${hostName} link`));
 	var videoId = result[1];
-	return `<iframe src="${srcStart}${videoId}${srcEnd}" frameborder="0" width="560" height="315" scrolling="no" allowfullscreen></iframe>`
+	return HtmlResponsiveDiv(`<iframe src="${srcStart}${videoId}${srcEnd}" frameborder="0" scrolling="no" allowfullscreen style="width: 100%; height: 100%; position: absolute;"></iframe>`);
+}
+
+function HtmlResponsiveDiv(content) {
+	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.2493%;">${content}</div>`;
 }
 
 function HtmlSelfPost() {
