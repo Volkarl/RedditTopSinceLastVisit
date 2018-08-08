@@ -111,6 +111,7 @@ function populatePopup() {
 
 function loadSubreddit(subreddit) {
 	console.log("Clicked " + subreddit);
+	postCounter = 0;
 	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, true);
 	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
 	renderPage(pushshiftUrl, subreddit, nowEpoch, lastVisitEpoch);
@@ -182,7 +183,7 @@ function createHtml(pushshiftUrl, subreddit, toEpoch, fromEpoch) {
 	// Analyse json and create HTML string with all images, pictures, videos, etc.
 }
 
-
+var postCounter = 0;
 
 function createHtmlContent(pushshiftUrl) {
 	const addToString = post => {
@@ -195,7 +196,7 @@ function createHtmlContent(pushshiftUrl) {
 		var element;
 
 		// Is it an image (or some gifs)?
-		if(extension === "jpg" || extension === "png")
+		if(extension === "jpg" || extension === "png" || extension === "gif")
 			element = HtmlImage(post.img);
 
 		// Is it an imgur album?
@@ -215,8 +216,9 @@ function createHtmlContent(pushshiftUrl) {
 			element = HtmlGiphy(post.img);
 
 		// Is it a gif?
-		else if(extension === "gif" || extension === "gifv" || extension === "mp4")
+		else if(extension === "gifv" || extension === "mp4")
 			element = HtmlMp4(post.img.toString().slice(0, - (extension.length)) + "mp4");
+			// Many .gif extensions could be used here too (imgur links, for one), however, some hosts cannot, as it would then point to a file that does not exist
 
 		// Is it a picture without extension?
 		else if (post.domain.includes("imgur.com") || post.domain.includes("i.redd.it"))
@@ -232,13 +234,10 @@ function createHtmlContent(pushshiftUrl) {
 		else if(post.domain.includes("redtube"))
 			element = HtmlRedtube(post.img);
 
-
-
 						//////////////////Fix
 		// Is it a video?
 //		else if (post.domain.includes("v.redd.it"))
 //			element = HtmlImageWithoutExtension(post.img);
-
 
 		else if(post.domain.includes("twitter"))
 			element = HtmlTwitter(post.img);
@@ -256,9 +255,7 @@ function createHtmlContent(pushshiftUrl) {
 			element = HtmlDiv(HtmlLink(post.img, "Unrecognized source url")); 
 			///// I feel like post.img should be renamed
 
-
-
-		var html = HtmlDiv(HtmlPostTitle(post.title) + HtmlLineBreak() + element + HtmlComments(post.comments, post.num_comments) + HtmlLineDivider());
+		var html = HtmlDiv(HtmlPostTitle(`${postCounter++} ${post.title}`) + HtmlLineBreak() + element + HtmlComments(post.comments, post.num_comments) + HtmlLineDivider());
 
 		console.log(html);
 
@@ -336,9 +333,9 @@ function HtmlImage(imageUrl) {
 					</a>`);
 }
 
-function HtmlMp4(imageUrl) {
+function HtmlMp4(url) {
 	return HtmlDiv(
-		`<video controls autoplay loop muted src="${imageUrl}"> 
+		`<video controls autoplay loop muted src="${url}"> 
 			Your browser does not support the video tag. 
 		</video>`);
 	// In order for autoplay to work on multiple videos at once, they have to be muted
@@ -351,40 +348,23 @@ function HtmlDiv(content) {
 		//style="left: 0; width: 100%; height: 0; position: relative;" 
 }
 
-function HtmlMp4(imageUrl) {
-	return HtmlDiv(
-		`<video controls autoplay loop muted src="${imageUrl}"> 
-			Your browser does not support the video tag. 
-		</video>`);
-	// In order for autoplay to work on multiple videos at once, they have to be muted
-}
-
 function HtmlGiphy(url) {
 	const regex = /giphy\.com\/gifs\/(\w+)/i;
 	return HtmlIFrame("Giphy", regex, "https://giphy.com/embed/", url, "");
-	//////// Doesn't work with all kinds of Giphy links yet
+	// Doesn't work with all kinds of Giphy links yet
 }
 
 function HtmlGfycat(url) {
-// Other solution that doesn't fit entire screen
-// So it probably has something to do with the div and inner width/height at 100%?
-//			element = `<iframe src='${post.img}' frameborder='0' scrolling='no' allowfullscreen width='640' height='346'></iframe>`
-	//return HtmlDiv(
-	//`<iframe src='${url}' frameborder='0' scrolling='no' width='100%' height='100%' style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: relative;" allowfullscreen></iframe>`);
-	///// The frame fits entire screen, while the gfycat only fits its size, so it looks a bit dumb
+	// To embed gfycats like normal, do: 
+	// return HtmlIFrame("Gfycat", regex, "https://gfycat.com/", url, "");
+	// However, the easiest and prettiest way is just by using giant.gfycat links with the mp4 player
 
-//	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 74.0247%;">
-//				<iframe src="${url}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
-//			</div>`;
+	const regex = /gfycat\.com\/(?:gifs\/detail\/)?(?:ifr\/)?(\w+)/i; // gifs/detail/ is an optional non capture group
+	var result = regex.exec(url);
+	if(result === null) return HtmlDiv(HtmlLink(url, `Invalid Gfycat link`));
+	var videoId = result[1];
 
-///////////////////// Make my iframes responsive? Absolute size, etc.?
-
-	const regex = /gfycat\.com\/(?:gifs\/detail\/)?(\w+)/i; // gifs/detail/ is an optional non capture group
-	//return `<div style="left: 0; width: 100%; position: relative;">
-	//			${HtmlIFrame("Gfycat", regex, "https://gfycat.com/", url, "")}
-	//		</div>`;
-	return HtmlIFrame("Gfycat", regex, "https://gfycat.com/", url, "");
-//Removed: padding-bottom: 74.0247%;
+	return HtmlMp4(`https://giant.gfycat.com/${videoId}.mp4`)
 }
 
 function HtmlDailymotion(url) {
@@ -397,14 +377,6 @@ function HtmlYoutube(url) {
 	//Turns: https://m.youtube.com/watch?v=hWLjYJ4BzvI&feature=youtu.be into hWLjYJ4BzvI, etc, see: https://stackoverflow.com/questions/6903823/regex-for-youtube-id
 
 	return HtmlIFrame("Youtube", regex, "https://youtube.com/embed/", url, "");
-
-/*	
-To make the video fill entire screen, use: 
-
-	return `<div style="left: 0; width: 100%; height: 0; position: relative; padding-bottom: 56.2493%;">
-				<iframe src="${"https://youtube.com/embed/" + videoId}" style="border: 0; top: 0; left: 0; width: 100%; height: 100%; position: absolute;" allowfullscreen scrolling="no"></iframe>
-			</div>`;
-*/
 }
 
 function HtmlPorhub(url) {
@@ -431,8 +403,8 @@ function HtmlResponsiveDiv(content) {
 }
 
 function HtmlSelfPost() {
-	return ``;
-	// Return nothing, because I don't know how to embed the contents of a self post (it's not in the JSON file)
+	return `Self post: cannot embed`;
+	// RI don't know how to embed the contents of a self post (it's not in the JSON file, so I'd have to query something entirely different)
 }
 
 function HtmlImageWithoutExtension(url) {
