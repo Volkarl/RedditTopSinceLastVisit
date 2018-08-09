@@ -236,6 +236,16 @@ function createHtmlContent(pushshiftUrl) {
 		else if(post.domain.includes("redtube"))
 			element = HtmlRedtube(post.img);
 
+		else if(post.domain.includes("youporn"))
+					element = HtmlYouporn(post.img);
+
+		else if(post.domain.includes("xvideos"))
+					element = HtmlXvideos(post.img);
+
+		else if(post.domain.includes("xhamster"))
+					element = HtmlXhamster(post.img);
+
+
 						//////////////////Fix
 		// Is it a video?
 //		else if (post.domain.includes("v.redd.it"))
@@ -391,6 +401,21 @@ function HtmlPorhub(url) {
 function HtmlRedtube(url) {
 	const regex = /redtube.com\/(\w+)/i;
 	return HtmlIFrame("Redtube", regex, "https://embed.redtube.com/?id=", url, "");
+}
+
+function HtmlYouporn(url) {
+	const regex = /youporn.com\/watch\/(\w+)/i;
+	return HtmlIFrame("Youporn", regex, "https://www.youporn.com/embed/", url, "");
+}
+
+function HtmlXvideos(url) {
+	const regex = /xvideos.com\/video(\w+)/i;
+	return HtmlIFrame("XVideos", regex, "https://www.xvideos.com/embedframe/", url, "");
+}
+
+function HtmlXhamster(url) {
+	const regex = /xhamster.com\/videos\/.*-(\w+)/i; // Matches the group after the last occurence of "-"
+	return HtmlIFrame("XHamster", regex, "https://xhamster.com/embed/", url, "");
 }
 
 function HtmlIFrame(hostName, regex, srcStart, url, srcEnd) {
