@@ -40,30 +40,21 @@ function openHtmlAsNewTab(html) {
 
 }
 
-function syncToChrome(subreddit, visitEpoch, reloadAfterSync) {
-	if(reloadAfterSync) {
-		chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
-			console.log("Saved visit: " + subreddit + " at " + visitEpoch)
-			reloadPage();
-		});
-	}
-	else {
-		chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
-			console.log("Saved visit: " + subreddit + " at " + visitEpoch)
-		});		
-	}
+function syncToChrome(subreddit, visitEpoch) {
+	chrome.storage.sync.set({ [subreddit]: visitEpoch}, function() {
+		console.log("Saved visit: " + subreddit + " at " + visitEpoch)
+	});
 }
 
-function getLastVisitEpochAndReplace(subreddit, reloadAfterSync) {
+function getLastVisitEpochAndReplace(subreddit) {
 	console.log(visitData);
-
 	console.log("Called lastVisitEpoch with subreddit " + subreddit);
 
 	var lastVisitEpoch = visitData[subreddit];
 	if(lastVisitEpoch !== undefined) {	
 		visitData[subreddit] = nowEpoch;
 		console.log("Syncing data");
-		syncToChrome(subreddit, nowEpoch, reloadAfterSync);
+		syncToChrome(subreddit, nowEpoch);
 	}
 	return lastVisitEpoch;
 }
@@ -77,13 +68,13 @@ function addButton(id, value, text, onclick) {
     newElement.addEventListener('click', onclick);
 
 	newElement.textContent = generateButtonText(value); ////////////////////////// PROBLEM: This may execute prior to storage.sync completing, so it may not update. Find better solution.
+	///// I'm not sure that's important, since we use the local visitdata for this
 
     console.log("Adding button " + id);
     console.log(newElement);
 
     p.appendChild(newElement);
     p.appendChild(document.createElement('br')); // Line break
-    // Maybe I can find a way to do this inline in the html file's styles?
 }
 
 function convertEpochToDays(epoch) {
@@ -102,17 +93,34 @@ function generateButtonText(subreddit) {
 }
 
 function populatePopup() {
-	for (var subreddit in visitData) {
+	// Turn my associative array into an actual array that guarantees the order of objects, which means that I can sort through them
+	var dayArray = [];
+	for (var subreddit in visitData) 
+		dayArray.push([subreddit, convertEpochToDays(visitData[subreddit])]);
+
+	dayArray.sort(function(a, b) {
+		var dayA = a[1];
+		var dayB = b[1];
+		return dayB - dayA; // Returns positive, negative or zero depending on whether they need to be swapped or not
+	});
+	// Sort subreddits by amount of days since last visit (descending)
+
+	for (var i = 0; i < dayArray.length; i++) {
+		var subreddit = dayArray[i][0];
 		addButton('sBtn-' + subreddit, subreddit, generateButtonText(subreddit), function() {
 			loadSubreddit(this.value);
+			this.textContent = generateButtonText(this.value);
+			document.getElementById("subredditButtonFrame").appendChild(this);
+			// Makes the button change location to the back of the frame
 		});
 	}
+	// Generate button for each subreddit
 }
 
 function loadSubreddit(subreddit) {
 	console.log("Clicked " + subreddit);
 	postCounter = 0;
-	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit, true);
+	var lastVisitEpoch = getLastVisitEpochAndReplace(subreddit);
 	var pushshiftUrl = getPushshiftUrl(subreddit, lastVisitEpoch);
 	renderPage(pushshiftUrl, subreddit, nowEpoch, lastVisitEpoch);
 }
@@ -125,7 +133,7 @@ function addNewSubreddit() {
 		if(lastVisit !== undefined)
 			console.log("No prior visits");
 			visitData[subreddit] = nowEpoch;
-			syncToChrome(subreddit, nowEpoch, true);
+			syncToChrome(subreddit, nowEpoch);
 	});
 }
 
@@ -137,16 +145,10 @@ function removeSubreddit() {
 		delete visitData[subreddit];
 		chrome.storage.sync.remove(subreddit, function() {
 			console.log("Successfully removed subreddit");
-			reloadPage();
 		});
 	}
 	console.log("Removing subreddit: " + subreddit);
 }
-
-function reloadPage() {
-	//location.reload();
-}
-/////////////////// I'm still not a fan of this. It works, but it feels like a nuclear option, and also it clears the console whenever everything is reloaded.
 
 // Add event handlers
 document.addEventListener('DOMContentLoaded', function() {
