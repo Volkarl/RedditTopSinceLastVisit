@@ -277,7 +277,7 @@ function createHtmlContent(pushshiftUrl) {
 	  }
 
 //https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
-	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=nsfw_gifs&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
+	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=videos&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
@@ -341,7 +341,7 @@ function HtmlLink(url, text) {
 
 function HtmlImage(imageUrl) {
 	return HtmlDiv(`<a href="${imageUrl}">
-						<img src="${imageUrl}"/>
+						<img style="max-width: 100%; height: auto" src="${imageUrl}"/>
 					</a>`);
 }
 
@@ -396,7 +396,7 @@ function HtmlPorhub(url) {
 	return HtmlIFrame("Pornhub", regex, "https://www.pornhub.com/embed/", url, "");
 }
 
-///////////////Only works with .com THAT SHOULD BE FIXABLE WITH BETTER REGEX
+///////////////Only works with .com THAT SHOULD BE FIXABLE WITH BETTER REGEX: Same applies to all the other occurances
 
 function HtmlRedtube(url) {
 	const regex = /redtube.com\/(\w+)/i;
