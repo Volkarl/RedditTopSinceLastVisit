@@ -245,11 +245,9 @@ function createHtmlContent(pushshiftUrl) {
 		else if(post.domain.includes("xhamster"))
 					element = HtmlXhamster(post.img);
 
-
-						//////////////////Fix
-		// Is it a video?
-//		else if (post.domain.includes("v.redd.it"))
-//			element = HtmlImageWithoutExtension(post.img);
+		// Is it reddit video?
+		else if (post.domain.includes("v.redd.it"))
+			element = "Reddit Video: Cannot Embed"; // Literally impossible without inline script
 
 		else if(post.domain.includes("twitter"))
 			element = HtmlTwitter(post.img);
@@ -277,7 +275,7 @@ function createHtmlContent(pushshiftUrl) {
 	  }
 
 //https://api.pushshift.io/reddit/submission/search/?subreddit=doujinshi&after=1532345148&before=1532355327&sort_type=num_comments&sort=desc&size=50
-	return fetch('https://api.pushshift.io/reddit/submission/search/?subreddit=videos&after=1532345148&before=1532521236&sort_type=num_comments&sort=desc&size=50') //////Todo
+	return fetch(pushshiftUrl) //////Todo
 	  .then(res => res.json())
 	  .then(res => res.data)
 	  .then(res => res.map(post => ({img: post.url, comments: post.full_link, num_comments: post.num_comments, domain: post.domain, title: post.title, is_self: post.is_self})))
@@ -430,7 +428,7 @@ function HtmlResponsiveDiv(content) {
 }
 
 function HtmlSelfPost() {
-	return `Self post: cannot embed`;
+	return `Self Post: Cannot Embed`;
 	// RI don't know how to embed the contents of a self post (it's not in the JSON file, so I'd have to query something entirely different)
 }
 
