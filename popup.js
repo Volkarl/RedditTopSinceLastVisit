@@ -203,10 +203,7 @@ function createHtmlContent(pushshiftUrl) {
 
 		// Is it an imgur album?
 		else if(post.img.includes("imgur.com/a")) {
-			var regex = /imgur.com\/a\/(\w+)/i; ///////change to const?
-			var albumId = regex.exec(post.img.toString())[1];
-			console.log("Album: " + albumId);
-			element = HtmlImgurAlbum(albumId);
+			element = HtmlImgurAlbum(post.img);
 		}
 
 		// Is it a gfycat?
@@ -288,7 +285,12 @@ function HtmlBody(pageContent) {
 	return `<html><body> ${pageContent} </body></html>`;
 }
 
-function HtmlImgurAlbum(albumId) {
+function HtmlImgurAlbum(url) {
+	var regex = /imgur.com\/a\/(\w+)/i; ///////change to const?
+	var result = regex.exec(url);
+	if(result === null) return HtmlDiv(HtmlLink(url, `Invalid Imgur album`));
+	var albumId = result[1];
+
 	// The official way this is done, according to iframely.com:
 	/*
 		<blockquote class="imgur-embed-pub" lang="en" data-id="a/twP6C">
