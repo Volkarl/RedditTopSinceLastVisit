@@ -32,11 +32,11 @@ function renderPage(pushshiftUrl, subreddit, toEpoch, fromEpoch){
 function openHtmlAsNewTab(html) {
 //	console.log(html);
 	console.log("Opening new tab");
-	//var url = "data:text/html," + encodeURIComponent(html);
-	//chrome.tabs.create({url: url, active: false});
-	var w = window.open();
+	var url = "data:text/html," + encodeURIComponent(html);
+	chrome.tabs.create({url: url, active: false});
+	//var w = window.open(); NOW OBSOLETE SOMEHOW?
 //	w.document.open().write(html);
-	w.document.body.innerHTML = html;
+	//w.document.body.innerHTML = html; NOW OBSOLETE SOMEHOW?
 
 }
 
