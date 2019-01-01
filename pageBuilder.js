@@ -17,7 +17,7 @@ function createHtmlContent(pushshiftUrl) {
 		var extension = post.img.substring(post.img.lastIndexOf('.') + 1, post.img.length).toString(); 
 		/////////////// This works, but a good regex would be better, because it chops up gfycat links, etc. too
 
-		var element;
+		var element = HtmlDiv(HtmlLink(post.img, "Source URL"));
 
 		// Is it an image (or some gifs)?
 		if(extension === "jpg" || extension === "png" || extension === "gif")
@@ -81,8 +81,9 @@ function createHtmlContent(pushshiftUrl) {
 
 		// Is it none of the above?
 		else 
-			element = HtmlDiv(HtmlLink(post.img, "Unrecognized source url")); 
-			///// I feel like post.img should be renamed
+			element = HtmlPostTitle("Unrecognized source URL");
+
+		///// I feel like post.img should be renamed
 
 		var html = HtmlDiv(HtmlPostTitle(`${postCounter++} ${post.title}`) + HtmlLineBreak() + element + HtmlComments(post.comments, post.num_comments) + HtmlLineDivider());
 
@@ -163,8 +164,9 @@ function HtmlLink(url, text) {
 
 function HtmlImage(imageUrl) {
 	return HtmlDiv(`<a href="${imageUrl}">
-						<img style="max-width: 100%; height: auto" src="${imageUrl}"/>
+						<img style="max-width: 100%; max-height: 100%" src="${imageUrl}"/>
 					</a>`);
+	// Perhaps add: height: inherit !important; according to https://stackoverflow.com/questions/3751565/css-100-width-or-height-while-keeping-aspect-ratio/26065762
 }
 
 function HtmlMp4(url) {
